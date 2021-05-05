@@ -13,14 +13,24 @@ body {
   font-family: 'Source Sans Pro', 'Trebuchet MS', 'Lucida Grande', 'Bitstream Vera Sans', 'Helvetica Neue', sans-serif;
   margin: 0;
   text-align: center;
-  color: #293c4b;
+  color: #fff;
+  background-color: #011627;
 }
 
-h1 {
-  font-size: 30px;
+.Container {
+  display: flex;
+  min-height: 100vh;
+  min-width: 100vw;
 }
 
-img {
-  margin: 20px 0;
-  max-width: 200px;
+.Panel {
+  width: 300px;
+  border-right: 1px solid #444;
+}
+
+.ChatContainer {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  width: auto;
 }
