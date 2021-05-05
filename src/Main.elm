@@ -5,7 +5,7 @@ import Html exposing (Html, div, h1, img, text)
 import Html.Attributes exposing (src, class)
 import List
 import Debug
-import String.UTF8 as UTF8
+import WeechatMessage
 
 
 ---- MODEL ----
@@ -39,66 +39,21 @@ update msg model =
             let _ = Debug.log "status" isConnected
             in 
                 ( model
-                , weechatSend "init password=test,compression=off\n"
+                , Cmd.batch
+                    -- Init needs to be last for it to be sent first.
+                    -- This might cause a race condition.
+                    [ weechatSend "info version\n"
+                    , weechatSend "init password=test,compression=off\n"
+                    ]
                 )
 
         Recv message ->
-            -- Remove header bytes.
-            let parsed = parseMessage (List.drop 9 message)
+            let
+                _ = Debug.log "parsed message:" (WeechatMessage.parse message)
             in
                 ( model
                 , Cmd.none
                 )
-
-
-parseMessage : List Int -> String
-parseMessage message =
-    let
-        _ = Debug.log "Message" message
-        operation = parseString (List.take 3 message)
-        _ = Debug.log "Operation" operation
-
-        payloadBytes = List.drop 3 message
-        payload = case operation of
-            "inf" -> parseInfo payloadBytes
-            _ -> ( "err", "err" )
-        _ = Debug.log "Payload" payload
-    in
-        ""
-
-
-parseString : List Int -> String
-parseString message =
-    case UTF8.toString message of
-        Ok value -> value
-        Err err -> err
-
-
-parseVariableLengthString : List Int -> (String, List Int)
-parseVariableLengthString bytes =
-    let
-        length = parseNumber (List.take 4 bytes)
-        rest = List.drop 4 bytes
-    in
-        ( parseString (List.take length rest)
-        , (List.drop length rest ) )
-
-
-
-parseInfo : List Int -> ( String, String )
-parseInfo message =
-    let
-        (key, rest) = parseVariableLengthString message
-        (value, _) = parseVariableLengthString rest
-    in
-        ( key, value )
-
-
-parseNumber : List Int -> Int
-parseNumber bytes =
-    case bytes of
-        (b3::b2::b1::b0::_) -> b0 + (16 * b1) + (256 * b2) + (4096 * b3)
-        _ -> 0
 
 
 
