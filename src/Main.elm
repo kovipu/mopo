@@ -39,7 +39,7 @@ update msg model =
             let _ = Debug.log "status" isConnected
             in 
                 ( model
-                , Cmd.none
+                , weechatSend "init password=test,compression=off\n"
                 )
 
         Recv message ->
