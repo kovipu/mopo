@@ -29,11 +29,19 @@ init =
 
 type Msg
     = Recv (List Int) 
+    | Status Bool
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
     case msg of
+        Status isConnected ->
+            let _ = Debug.log "status" isConnected
+            in 
+                ( model
+                , Cmd.none
+                )
+
         Recv message ->
             -- Remove header bytes.
             let parsed = parseMessage (List.drop 9 message)
@@ -97,6 +105,11 @@ parseNumber bytes =
 -- PORTS
 
 
+-- Receive socket status on connect.
+port socketStatus : (Bool -> msg) -> Sub msg
+
+
+-- Communicate with Weechat.
 port weechatSend : String -> Cmd msg
 port weechatReceive : (List Int -> msg) -> Sub msg
 
@@ -107,7 +120,7 @@ port weechatReceive : (List Int -> msg) -> Sub msg
 
 subscriptions : Sub Msg
 subscriptions =
-    weechatReceive Recv
+    Sub.batch [ weechatReceive Recv, socketStatus Status ]
 
 
 

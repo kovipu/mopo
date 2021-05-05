@@ -10,8 +10,11 @@ const websocket = new WebSocket('ws://localhost:8000/weechat');
 websocket.binaryType = 'arraybuffer';
 
 websocket.onopen = () => {
-  websocket.send('init password=test\n');
-  websocket.send('info version\n');
+  app.ports.socketStatus.send(true);
+}
+
+websocket.onerror = () => {
+  app.ports.socketStatus.send(false);
 }
 
 websocket.addEventListener("message", event => {
