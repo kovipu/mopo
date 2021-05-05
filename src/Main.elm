@@ -49,6 +49,7 @@ update msg model =
 
         Recv message ->
             let
+                _ = Debug.log "received message:" message
                 _ = Debug.log "parsed message:" (WeechatMessage.parse message)
             in
                 ( model

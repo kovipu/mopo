@@ -8,6 +8,11 @@ elm make
 elm-app start
 ```
 
+### Testing
+```
+elm-app test
+```
+
 ### Setting up Weechat for testing
 
 Install Weechat. For example on MacOS:
