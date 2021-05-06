@@ -1,11 +1,18 @@
-module WeechatMessage exposing (parse)
+module WeechatMessage exposing (Buffer, Message(..), parse)
 
 import String.UTF8 as UTF8
 
 
-type alias Message =
-    { operation : String
-    , data : ( String, String )
+type Message
+    = Info ( String, String )
+    | Hdata (List Buffer)
+    | Invalid String
+
+
+type alias Buffer =
+    { hpath : String
+    , number : Int
+    , fullName : String
     }
 
 
@@ -25,18 +32,17 @@ parse message =
     in
     case operation of
         "inf" ->
-            { operation = operation
-            , data = readInfo rest
-            }
+            Info (readInfo rest)
+
+        "hda" ->
+            Hdata (readHdata rest)
 
         _ ->
-            { operation = "err"
-            , data = ( "err", "err" )
-            }
+            Invalid "Unknown operation."
 
 
 
--- OPERATION PARSERS.
+-- OPERATION PARSERS
 
 
 readInfo : List Int -> ( String, String )
@@ -51,8 +57,58 @@ readInfo message =
     ( key, value )
 
 
+readHdata : List Int -> List Buffer
+readHdata message =
+    let
+        -- TODO: make use of this data.
+        ( keys, keysrest ) =
+            readString message
+
+        ( values, tail ) =
+            readString keysrest
+    in
+    readHdataChunk (List.drop 4 tail)
+
+
+readHdataChunk : List Int -> List Buffer
+readHdataChunk chunk =
+    let
+        ( hpath, rest ) =
+            readShortString chunk
+
+        number =
+            parseNumber (List.take 4 rest)
+
+        ( fullName, tail ) =
+            readString (List.drop 4 rest)
+
+        buffer =
+            { hpath = hpath
+            , number = number
+            , fullName = fullName
+            }
+    in
+    if List.length tail == 0 then
+        [ buffer ]
+
+    else
+        [ buffer ] ++ readHdataChunk tail
+
+
 
 -- HELPERS
+
+
+readShortString : List Int -> ( String, List Int )
+readShortString bytes =
+    case bytes of
+        length :: tail ->
+            ( parseUTF8 (List.take length tail)
+            , List.drop length tail
+            )
+
+        [] ->
+            ( "", [] )
 
 
 readString : List Int -> ( String, List Int )
@@ -64,9 +120,9 @@ readString bytes =
         rest =
             List.drop 4 bytes
     in
-        ( parseUTF8 (List.take length rest)
-        , List.drop length rest
-        )
+    ( parseUTF8 (List.take length rest)
+    , List.drop length rest
+    )
 
 
 parseNumber : List Int -> Int

@@ -1,26 +1,27 @@
 port module Main exposing (..)
 
 import Browser
-import Html exposing (Html, div, h1, img, text)
-import Html.Attributes exposing (src, class)
-import List
 import Debug
+import Html exposing (Html, div, h1, img, text)
+import Html.Attributes exposing (class, src)
+import List
 import WeechatMessage
+
 
 
 ---- MODEL ----
 
 
 type alias Model =
-    {
-        messages : List String
+    { messages : List String
     }
 
 
 init : ( Model, Cmd Msg )
 init =
     ( { messages = [] }
-    , Cmd.none )
+    , Cmd.none
+    )
 
 
 
@@ -28,7 +29,7 @@ init =
 
 
 type Msg
-    = Recv (List Int) 
+    = Recv (List Int)
     | Status Bool
 
 
@@ -36,37 +37,39 @@ update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
     case msg of
         Status isConnected ->
-            let _ = Debug.log "status" isConnected
-            in 
-                ( model
-                , Cmd.batch
-                    -- Init needs to be last for it to be sent first.
-                    -- This might cause a race condition.
-                    [ weechatSend "info version\n"
-                    , weechatSend "init password=test,compression=off\n"
-                    ]
-                )
+            let
+                _ =
+                    Debug.log "status" isConnected
+            in
+            ( model
+            , Cmd.batch
+                -- Init needs to be last for it to be sent first.
+                -- This might cause a race condition.
+                [ weechatSend "hdata buffer:gui_buffers(*) number,full_name\n"
+                , weechatSend "init password=test,compression=off\n"
+                ]
+            )
 
         Recv message ->
             let
-                _ = Debug.log "received message:" message
-                _ = Debug.log "parsed message:" (WeechatMessage.parse message)
+                _ =
+                    Debug.log "parsed message" (WeechatMessage.parse message)
             in
-                ( model
-                , Cmd.none
-                )
+            ( model
+            , Cmd.none
+            )
 
 
 
 -- PORTS
 
 
--- Receive socket status on connect.
 port socketStatus : (Bool -> msg) -> Sub msg
 
 
--- Communicate with Weechat.
 port weechatSend : String -> Cmd msg
+
+
 port weechatReceive : (List Int -> msg) -> Sub msg
 
 
@@ -97,6 +100,7 @@ renderMessage : String -> Html Msg
 renderMessage message =
     div [ class "Message" ]
         [ text message ]
+
 
 
 ---- PROGRAM ----
