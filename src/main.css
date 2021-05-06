@@ -26,6 +26,19 @@ body {
 .Panel {
   width: 300px;
   border-right: 1px solid #444;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
+.Panel > .Buffers {
+  padding: 10px;
+}
+
+.Panel > .Buffers > .Buffer {
+  list-style: none;
+  padding: 5px;
+  text-align: left;
 }
 
 .ChatContainer {

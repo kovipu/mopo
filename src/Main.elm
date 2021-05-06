@@ -2,10 +2,10 @@ port module Main exposing (..)
 
 import Browser
 import Debug
-import Html exposing (Html, div, h1, img, text)
+import Html exposing (Html, div, h1, img, li, text, ul)
 import Html.Attributes exposing (class, src)
 import List
-import WeechatMessage
+import WeechatMessage exposing (Buffer, Message(..))
 
 
 
@@ -13,13 +13,16 @@ import WeechatMessage
 
 
 type alias Model =
-    { messages : List String
+    { buffers : List Buffer
+    , messages : List String
     }
 
 
 init : ( Model, Cmd Msg )
 init =
-    ( { messages = [] }
+    ( { buffers = []
+      , messages = []
+      }
     , Cmd.none
     )
 
@@ -45,17 +48,27 @@ update msg model =
             , Cmd.batch
                 -- Init needs to be last for it to be sent first.
                 -- This might cause a race condition.
-                [ weechatSend "hdata buffer:gui_buffers(*) number,full_name\n"
+                [ weechatSend "hdata buffer:gui_buffers(*) number,full_name,short_name\n"
                 , weechatSend "init password=test,compression=off\n"
                 ]
             )
 
         Recv message ->
             let
-                _ =
-                    Debug.log "parsed message" (WeechatMessage.parse message)
+                weechatMessage =
+                    WeechatMessage.parse message
+
+                newModel =
+                    case weechatMessage of
+                        Buffers buffers ->
+                            { model
+                                | buffers = buffers
+                            }
+
+                        _ ->
+                            model
             in
-            ( model
+            ( newModel
             , Cmd.none
             )
 
@@ -89,11 +102,25 @@ subscriptions =
 view : Model -> Html Msg
 view model =
     div [ class "Container" ]
-        [ div [ class "Panel" ] [ text "Panel" ]
+        [ div [ class "Panel" ] [ ul [ class "Buffers" ] (List.map renderBuffer model.buffers) ]
         , div
             [ class "ChatContainer" ]
             (List.map renderMessage model.messages)
         ]
+
+
+renderBuffer : Buffer -> Html Msg
+renderBuffer buffer =
+    let
+        bufferName =
+            case buffer.shortName of
+                Just shortName ->
+                    shortName
+
+                Nothing ->
+                    buffer.fullName
+    in
+    li [ class "Buffer" ] [ text bufferName ]
 
 
 renderMessage : String -> Html Msg

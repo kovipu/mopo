@@ -4,15 +4,16 @@ import String.UTF8 as UTF8
 
 
 type Message
-    = Info ( String, String )
-    | Hdata (List Buffer)
+    = Info ( Maybe String, Maybe String )
+    | Buffers (List Buffer)
     | Invalid String
 
 
 type alias Buffer =
-    { hpath : String
+    { ppath : String
     , number : Int
     , fullName : String
+    , shortName : Maybe String
     }
 
 
@@ -35,7 +36,7 @@ parse message =
             Info (readInfo rest)
 
         "hda" ->
-            Hdata (readHdata rest)
+            Buffers (readHdata rest)
 
         _ ->
             Invalid "Unknown operation."
@@ -45,7 +46,7 @@ parse message =
 -- OPERATION PARSERS
 
 
-readInfo : List Int -> ( String, String )
+readInfo : List Int -> ( Maybe String, Maybe String )
 readInfo message =
     let
         ( key, rest ) =
@@ -67,40 +68,44 @@ readHdata message =
         ( values, tail ) =
             readString keysrest
     in
-    readHdataChunk (List.drop 4 tail)
+    readHashTable (List.drop 4 tail)
 
 
-readHdataChunk : List Int -> List Buffer
-readHdataChunk chunk =
+readHashTable : List Int -> List Buffer
+readHashTable chunk =
     let
         ( hpath, rest ) =
-            readShortString chunk
+            readPointer chunk
 
         number =
             parseNumber (List.take 4 rest)
 
-        ( fullName, tail ) =
+        ( fullName, tailShortName ) =
             readString (List.drop 4 rest)
 
+        ( shortName, tail ) =
+            readString tailShortName
+
         buffer =
-            { hpath = hpath
+            { ppath = hpath
             , number = number
-            , fullName = fullName
+            , fullName = Maybe.withDefault "" fullName -- This should never be null.
+            , shortName = shortName
             }
     in
     if List.length tail == 0 then
         [ buffer ]
 
     else
-        [ buffer ] ++ readHdataChunk tail
+        [ buffer ] ++ readHashTable tail
 
 
 
 -- HELPERS
 
 
-readShortString : List Int -> ( String, List Int )
-readShortString bytes =
+readPointer : List Int -> ( String, List Int )
+readPointer bytes =
     case bytes of
         length :: tail ->
             ( parseUTF8 (List.take length tail)
@@ -111,7 +116,7 @@ readShortString bytes =
             ( "", [] )
 
 
-readString : List Int -> ( String, List Int )
+readString : List Int -> ( Maybe String, List Int )
 readString bytes =
     let
         length =
@@ -120,16 +125,23 @@ readString bytes =
         rest =
             List.drop 4 bytes
     in
-    ( parseUTF8 (List.take length rest)
-    , List.drop length rest
-    )
+    if
+        -- This means the string is null in Weechat.
+        length == 0xFFFFFFFF
+    then
+        ( Nothing, rest )
+
+    else
+        ( Just (parseUTF8 (List.take length rest))
+        , List.drop length rest
+        )
 
 
 parseNumber : List Int -> Int
 parseNumber bytes =
     case bytes of
         b3 :: b2 :: b1 :: b0 :: _ ->
-            b0 + (16 * b1) + (256 * b2) + (4096 * b3)
+            b0 + (0x0100 * b1) + (0x00010000 * b2) + (0x01000000 * b3)
 
         _ ->
             0
