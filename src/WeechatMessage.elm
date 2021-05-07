@@ -17,26 +17,38 @@ type alias Buffer =
     }
 
 
-parse : List Int -> Message
+type alias Bytes =
+    List Int
+
+
+parse : Bytes -> Message
 parse message =
     let
         -- Drop header bytes.
         messageWithoutHeader =
-            List.drop 9 message
+            List.drop 5 message
+
+        ( id, payload ) =
+            readString messageWithoutHeader
 
         operation =
-            List.take 3 messageWithoutHeader
+            List.take 3 payload
                 |> parseUTF8
 
         rest =
-            List.drop 3 messageWithoutHeader
+            List.drop 3 payload
     in
     case operation of
         "inf" ->
             Info (readInfo rest)
 
         "hda" ->
-            Buffers (readHdata rest)
+            case id of
+                Just "hdata_buffers" ->
+                    Buffers (readBuffers rest)
+
+                _ ->
+                    Invalid "Unknown Hdata operation."
 
         _ ->
             Invalid "Unknown operation."
@@ -46,7 +58,7 @@ parse message =
 -- OPERATION PARSERS
 
 
-readInfo : List Int -> ( Maybe String, Maybe String )
+readInfo : Bytes -> ( Maybe String, Maybe String )
 readInfo message =
     let
         ( key, rest ) =
@@ -58,8 +70,8 @@ readInfo message =
     ( key, value )
 
 
-readHdata : List Int -> List Buffer
-readHdata message =
+readBuffers : Bytes -> List Buffer
+readBuffers message =
     let
         -- TODO: make use of this data.
         ( keys, keysrest ) =
@@ -71,10 +83,10 @@ readHdata message =
     readHashTable (List.drop 4 tail)
 
 
-readHashTable : List Int -> List Buffer
+readHashTable : Bytes -> List Buffer
 readHashTable chunk =
     let
-        ( hpath, rest ) =
+        ( ppath, rest ) =
             readPointer chunk
 
         number =
@@ -87,7 +99,7 @@ readHashTable chunk =
             readString tailShortName
 
         buffer =
-            { ppath = hpath
+            { ppath = ppath
             , number = number
             , fullName = Maybe.withDefault "" fullName -- This should never be null.
             , shortName = shortName
@@ -104,11 +116,11 @@ readHashTable chunk =
 -- HELPERS
 
 
-readPointer : List Int -> ( String, List Int )
+readPointer : Bytes -> ( String, Bytes )
 readPointer bytes =
     case bytes of
         length :: tail ->
-            ( parseUTF8 (List.take length tail)
+            ( List.take length tail |> parseUTF8
             , List.drop length tail
             )
 
@@ -116,7 +128,7 @@ readPointer bytes =
             ( "", [] )
 
 
-readString : List Int -> ( Maybe String, List Int )
+readString : Bytes -> ( Maybe String, Bytes )
 readString bytes =
     let
         length =
@@ -137,7 +149,7 @@ readString bytes =
         )
 
 
-parseNumber : List Int -> Int
+parseNumber : Bytes -> Int
 parseNumber bytes =
     case bytes of
         b3 :: b2 :: b1 :: b0 :: _ ->
@@ -147,7 +159,7 @@ parseNumber bytes =
             0
 
 
-parseUTF8 : List Int -> String
+parseUTF8 : Bytes -> String
 parseUTF8 message =
     case UTF8.toString message of
         Ok value ->

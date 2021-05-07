@@ -32,23 +32,23 @@ init =
 
 
 type Msg
-    = Recv (List Int)
+    = Recv Bytes
     | Status Bool
+
+
+type alias Bytes =
+    List Int
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
     case msg of
         Status isConnected ->
-            let
-                _ =
-                    Debug.log "status" isConnected
-            in
             ( model
             , Cmd.batch
                 -- Init needs to be last for it to be sent first.
                 -- This might cause a race condition.
-                [ weechatSend "hdata buffer:gui_buffers(*) number,full_name,short_name\n"
+                [ weechatSend "(hdata_buffers) hdata buffer:gui_buffers(*) number,full_name,short_name\n"
                 , weechatSend "init password=test,compression=off\n"
                 ]
             )
@@ -83,7 +83,7 @@ port socketStatus : (Bool -> msg) -> Sub msg
 port weechatSend : String -> Cmd msg
 
 
-port weechatReceive : (List Int -> msg) -> Sub msg
+port weechatReceive : (Bytes -> msg) -> Sub msg
 
 
 
