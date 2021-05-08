@@ -2,10 +2,11 @@ port module Main exposing (..)
 
 import Browser
 import Debug
+import Dict exposing (Dict)
 import Html exposing (Html, div, h1, img, li, text, ul)
 import Html.Attributes exposing (class, src)
 import List
-import WeechatMessage exposing (Buffer, Message(..))
+import WeechatMessage exposing (Message, Object, WeechatData(..))
 
 
 
@@ -13,8 +14,16 @@ import WeechatMessage exposing (Buffer, Message(..))
 
 
 type alias Model =
-    { buffers : List Buffer
+    { buffers : List Object
     , messages : List String
+    }
+
+
+type alias Buffer =
+    { pointer : String
+    , fullName : String
+    , shortName : Maybe String
+    , number : Int
     }
 
 
@@ -55,15 +64,18 @@ update msg model =
 
         Recv message ->
             let
-                weechatMessage =
+                { id, data } =
                     WeechatMessage.parse message
 
                 newModel =
-                    case weechatMessage of
-                        Buffers buffers ->
-                            { model
-                                | buffers = buffers
-                            }
+                    case id of
+                        Just "hdata_buffers" ->
+                            case data of
+                                Hda buffers ->
+                                    { model | buffers = buffers }
+
+                                _ ->
+                                    model
 
                         _ ->
                             model
@@ -109,16 +121,24 @@ view model =
         ]
 
 
-renderBuffer : Buffer -> Html Msg
+renderBuffer : Object -> Html Msg
 renderBuffer buffer =
     let
+        shortName =
+            Dict.get "short_name" buffer
+
         bufferName =
-            case buffer.shortName of
-                Just shortName ->
-                    shortName
+            case shortName of
+                Just value ->
+                    case value of
+                        Str str ->
+                            Maybe.withDefault "No short name." str
+
+                        _ ->
+                            Debug.todo "Invalid value."
 
                 Nothing ->
-                    buffer.fullName
+                    Debug.todo "Field does not exist."
     in
     li [ class "Buffer" ] [ text bufferName ]
 

@@ -1,20 +1,26 @@
-module WeechatMessage exposing (Buffer, Message(..), parse)
+module WeechatMessage exposing (Message, Object, WeechatData(..), parse)
 
+import Dict exposing (Dict)
 import String.UTF8 as UTF8
 
 
-type Message
-    = Info ( Maybe String, Maybe String )
-    | Buffers (List Buffer)
-    | Invalid String
-
-
-type alias Buffer =
-    { ppath : String
-    , number : Int
-    , fullName : String
-    , shortName : Maybe String
+type alias Message =
+    { id : Maybe String
+    , data : WeechatData
     }
+
+
+type WeechatData
+    = Str (Maybe String)
+    | Ptr String
+    | Inf ( String, String )
+    | Int Int
+    | Hda (List Object)
+    | Inv String
+
+
+type alias Object =
+    Dict String WeechatData
 
 
 type alias Bytes =
@@ -30,35 +36,39 @@ parse message =
 
         ( id, payload ) =
             readString messageWithoutHeader
+    in
+    { id = id
+    , data = parseWeechatData payload
+    }
 
+
+parseWeechatData : Bytes -> WeechatData
+parseWeechatData bytes =
+    let
         operation =
-            List.take 3 payload
+            List.take 3 bytes
                 |> parseUTF8
 
-        rest =
-            List.drop 3 payload
+        payload =
+            List.drop 3 bytes
     in
     case operation of
         "inf" ->
-            Info (readInfo rest)
+            Inf (readInfo payload)
 
         "hda" ->
-            case id of
-                Just "hdata_buffers" ->
-                    Buffers (readBuffers rest)
-
-                _ ->
-                    Invalid "Unknown Hdata operation."
+            Hda (readHdata payload)
 
         _ ->
-            Invalid "Unknown operation."
+            Inv ("Invalid weechat datatype " ++ operation)
 
 
 
 -- OPERATION PARSERS
+-- Info
 
 
-readInfo : Bytes -> ( Maybe String, Maybe String )
+readInfo : Bytes -> ( String, String )
 readInfo message =
     let
         ( key, rest ) =
@@ -67,53 +77,116 @@ readInfo message =
         ( value, _ ) =
             readString rest
     in
-    ( key, value )
+    ( Maybe.withDefault "" key, Maybe.withDefault "" value )
 
 
-readBuffers : Bytes -> List Buffer
-readBuffers message =
+
+-- Hdata
+
+
+readHdata : Bytes -> List Object
+readHdata payload =
     let
-        -- TODO: make use of this data.
-        ( keys, keysrest ) =
-            readString message
+        ( hpath, hpathTail ) =
+            readString payload
 
+        ( keys, keysTail ) =
+            readString hpathTail
+
+        keyList =
+            String.split "," (Maybe.withDefault "" keys)
+                |> List.map splitKeyPair
+
+        -- the first value is always p-path pointer.
+        keyListWithPointer =
+            ( "ppath", "ptr" ) :: keyList
+
+        count =
+            parseNumber (List.take 4 keysTail)
+
+        tail =
+            List.drop 4 keysTail
+    in
+    readHdataTable [] keyListWithPointer count tail
+
+
+readHdataTable : List Object -> List ( String, String ) -> Int -> Bytes -> List Object
+readHdataTable acc keyList count bytes =
+    let
         ( values, tail ) =
-            readString keysrest
+            readKeyValue Dict.empty keyList bytes
+
+        newAcc =
+            acc ++ [ values ]
     in
-    readHashTable (List.drop 4 tail)
-
-
-readHashTable : Bytes -> List Buffer
-readHashTable chunk =
-    let
-        ( ppath, rest ) =
-            readPointer chunk
-
-        number =
-            parseNumber (List.take 4 rest)
-
-        ( fullName, tailShortName ) =
-            readString (List.drop 4 rest)
-
-        ( shortName, tail ) =
-            readString tailShortName
-
-        buffer =
-            { ppath = ppath
-            , number = number
-            , fullName = Maybe.withDefault "" fullName -- This should never be null.
-            , shortName = shortName
-            }
-    in
-    if List.length tail == 0 then
-        [ buffer ]
+    if count == 1 then
+        newAcc
 
     else
-        [ buffer ] ++ readHashTable tail
+        readHdataTable newAcc keyList (count - 1) tail
+
+
+readKeyValue : Object -> List ( String, String ) -> Bytes -> ( Object, Bytes )
+readKeyValue acc keyList bytes =
+    case keyList of
+        [] ->
+            ( acc, bytes )
+
+        keyPair :: keyListTail ->
+            let
+                ( key, valueType ) =
+                    keyPair
+
+                ( value, bytesTail ) =
+                    readType valueType bytes
+
+                ( keyValue, tail ) =
+                    readKeyValue acc keyListTail bytesTail
+            in
+            ( Dict.insert key value keyValue, tail )
+
+
+readType : String -> Bytes -> ( WeechatData, Bytes )
+readType valueType bytes =
+    case valueType of
+        "int" ->
+            ( Int (parseNumber bytes), List.drop 4 bytes )
+
+        "ptr" ->
+            let
+                ( pointer, pointerTail ) =
+                    readPointer bytes
+            in
+            ( Ptr pointer, pointerTail )
+
+        "str" ->
+            let
+                ( string, stringTail ) =
+                    readString bytes
+            in
+            ( Str string, stringTail )
+
+        _ ->
+            ( Inv ("Invalid type: " ++ valueType), bytes )
+
+
+splitKeyPair : String -> ( String, String )
+splitKeyPair keyPair =
+    let
+        pair =
+            String.split ":" keyPair
+
+        first =
+            List.head pair
+
+        second =
+            List.head (List.drop 1 pair)
+    in
+    ( Maybe.withDefault "" first, Maybe.withDefault "" second )
 
 
 
--- HELPERS
+-- Pointer
 
 
 readPointer : Bytes -> ( String, Bytes )
@@ -126,6 +199,10 @@ readPointer bytes =
 
         [] ->
             ( "", [] )
+
+
+
+-- String
 
 
 readString : Bytes -> ( Maybe String, Bytes )
@@ -149,6 +226,10 @@ readString bytes =
         )
 
 
+
+-- Number
+
+
 parseNumber : Bytes -> Int
 parseNumber bytes =
     case bytes of
@@ -159,6 +240,10 @@ parseNumber bytes =
             0
 
 
+
+-- Helpers
+
+
 parseUTF8 : Bytes -> String
 parseUTF8 message =
     case UTF8.toString message of
@@ -167,3 +252,24 @@ parseUTF8 message =
 
         Err err ->
             err
+
+
+
+-- Split a list into lengths defined by a list of breakpoints.
+
+
+splitAtLengths : List Int -> List a -> List (List a)
+splitAtLengths breakpoints list =
+    case breakpoints of
+        [] ->
+            [ list ]
+
+        break :: breakTail ->
+            let
+                segment =
+                    List.take break list
+
+                tail =
+                    List.drop break list
+            in
+            [ segment ] ++ splitAtLengths breakTail tail
