@@ -2,11 +2,11 @@ port module Main exposing (..)
 
 import Browser
 import Debug
-import Dict exposing (Dict)
+import DecodeMessage exposing (Buffer, BuffersResult(..), parseHdataBuffers)
 import Html exposing (Html, div, h1, img, li, text, ul)
 import Html.Attributes exposing (class, src)
 import List
-import WeechatMessage exposing (Message, Object, WeechatData(..))
+import WeechatMessage exposing (Message, Object, WeechatData)
 
 
 
@@ -14,22 +14,16 @@ import WeechatMessage exposing (Message, Object, WeechatData(..))
 
 
 type alias Model =
-    { buffers : List Object
+    { buffers : List Buffer
+    , buffersErr : Maybe String
     , messages : List String
-    }
-
-
-type alias Buffer =
-    { pointer : String
-    , fullName : String
-    , shortName : Maybe String
-    , number : Int
     }
 
 
 init : ( Model, Cmd Msg )
 init =
     ( { buffers = []
+      , buffersErr = Nothing
       , messages = []
       }
     , Cmd.none
@@ -70,12 +64,12 @@ update msg model =
                 newModel =
                     case id of
                         Just "hdata_buffers" ->
-                            case data of
-                                Hda buffers ->
+                            case parseHdataBuffers data of
+                                Buffers buffers ->
                                     { model | buffers = buffers }
 
-                                _ ->
-                                    model
+                                BuffersErr buffersErr ->
+                                    { model | buffersErr = Just buffersErr }
 
                         _ ->
                             model
@@ -114,33 +108,30 @@ subscriptions =
 view : Model -> Html Msg
 view model =
     div [ class "Container" ]
-        [ div [ class "Panel" ] [ ul [ class "Buffers" ] (List.map renderBuffer model.buffers) ]
+        [ div [ class "Panel" ]
+            [ ul [ class "Buffers" ]
+                (case model.buffersErr of
+                    Just err ->
+                        [ text err ]
+
+                    Nothing ->
+                        List.map renderBuffer model.buffers
+                )
+            ]
         , div
             [ class "ChatContainer" ]
             (List.map renderMessage model.messages)
         ]
 
 
-renderBuffer : Object -> Html Msg
+renderBuffer : Buffer -> Html Msg
 renderBuffer buffer =
     let
-        shortName =
-            Dict.get "short_name" buffer
-
-        bufferName =
-            case shortName of
-                Just value ->
-                    case value of
-                        Str str ->
-                            Maybe.withDefault "No short name." str
-
-                        _ ->
-                            Debug.todo "Invalid value."
-
-                Nothing ->
-                    Debug.todo "Field does not exist."
+        name =
+            buffer.shortName
+                |> Maybe.withDefault buffer.fullName
     in
-    li [ class "Buffer" ] [ text bufferName ]
+    li [ class "Buffer" ] [ text name ]
 
 
 renderMessage : String -> Html Msg
