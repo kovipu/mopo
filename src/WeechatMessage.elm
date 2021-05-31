@@ -12,7 +12,7 @@ type alias Message =
 
 type WeechatData
     = Str (Maybe String)
-    | Ptr String
+    | Pth (List String)
     | Inf ( String, String )
     | Int Int
     | Hda (List Object)
@@ -90,6 +90,12 @@ readHdata payload =
         ( hpath, hpathTail ) =
             readString payload
 
+        numPointers =
+            hpath
+                |> Maybe.andThen (\h -> Just (String.split "/" h))
+                |> Maybe.andThen (\elements -> Just (List.length elements))
+                |> Maybe.withDefault 1
+
         ( keys, keysTail ) =
             readString hpathTail
 
@@ -97,9 +103,9 @@ readHdata payload =
             String.split "," (Maybe.withDefault "" keys)
                 |> List.map splitKeyPair
 
-        -- the first value is always p-path pointer.
-        keyListWithPointer =
-            ( "ppath", "ptr" ) :: keyList
+        -- the first value is always a list of p-path pointers.
+        keyListWithPpath =
+            ( "ppath", "pth" ) :: keyList
 
         count =
             parseNumber (List.take 4 keysTail)
@@ -107,14 +113,14 @@ readHdata payload =
         tail =
             List.drop 4 keysTail
     in
-    readHdataTable [] keyListWithPointer count tail
+    readHdataTable [] keyListWithPpath numPointers count tail
 
 
-readHdataTable : List Object -> List ( String, String ) -> Int -> Bytes -> List Object
-readHdataTable acc keyList count bytes =
+readHdataTable : List Object -> List ( String, String ) -> Int -> Int -> Bytes -> List Object
+readHdataTable acc keyList numPointers count bytes =
     let
         ( values, tail ) =
-            readKeyValue Dict.empty keyList bytes
+            readKeyValue Dict.empty keyList numPointers bytes
 
         newAcc =
             acc ++ [ values ]
@@ -123,11 +129,11 @@ readHdataTable acc keyList count bytes =
         newAcc
 
     else
-        readHdataTable newAcc keyList (count - 1) tail
+        readHdataTable newAcc keyList numPointers (count - 1) tail
 
 
-readKeyValue : Object -> List ( String, String ) -> Bytes -> ( Object, Bytes )
-readKeyValue acc keyList bytes =
+readKeyValue : Object -> List ( String, String ) -> Int -> Bytes -> ( Object, Bytes )
+readKeyValue acc keyList numPointers bytes =
     case keyList of
         [] ->
             ( acc, bytes )
@@ -138,26 +144,26 @@ readKeyValue acc keyList bytes =
                     keyPair
 
                 ( value, bytesTail ) =
-                    readType valueType bytes
+                    readType valueType numPointers bytes
 
                 ( keyValue, tail ) =
-                    readKeyValue acc keyListTail bytesTail
+                    readKeyValue acc keyListTail numPointers bytesTail
             in
             ( Dict.insert key value keyValue, tail )
 
 
-readType : String -> Bytes -> ( WeechatData, Bytes )
-readType valueType bytes =
+readType : String -> Int -> Bytes -> ( WeechatData, Bytes )
+readType valueType numPointers bytes =
     case valueType of
         "int" ->
             ( Int (parseNumber bytes), List.drop 4 bytes )
 
-        "ptr" ->
+        "pth" ->
             let
-                ( pointer, pointerTail ) =
-                    readPointer bytes
+                ( pointers, pointerTail ) =
+                    readPpath [] bytes numPointers
             in
-            ( Ptr pointer, pointerTail )
+            ( Pth pointers, pointerTail )
 
         "str" ->
             let
@@ -186,19 +192,31 @@ splitKeyPair keyPair =
 
 
 
--- Pointer
+-- Ppath
 
 
-readPointer : Bytes -> ( String, Bytes )
-readPointer bytes =
-    case bytes of
-        length :: tail ->
-            ( List.take length tail |> parseUTF8
-            , List.drop length tail
-            )
+readPpath : List String -> Bytes -> Int -> ( List String, Bytes )
+readPpath acc bytes numPointers =
+    if numPointers == 0
+    then
+        (acc , bytes )
+    else
+        case bytes of
+            length :: tail ->
+                let
+                    pointer =
+                        List.take length tail
+                            |> parseUTF8
+                    newAcc =
+                        pointer :: acc
+                    
+                    newTail = List.drop length tail
+                    
+                in
+                    readPpath newAcc newTail (numPointers - 1)
 
-        [] ->
-            ( "", [] )
+            [] ->
+                ( [], [] )
 
 
 

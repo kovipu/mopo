@@ -11,7 +11,7 @@ import WeechatMessage exposing (Object, WeechatData(..))
 
 
 type alias Buffer =
-    { pointer : String
+    { ppath : List String
     , fullName : String
     , shortName : Maybe String
     , number : Int
@@ -73,8 +73,8 @@ type BufferResult
 parseBuffer : Object -> BufferResult
 parseBuffer data =
     let
-        pointerResult =
-            getPointerOrFail "ppath" data
+        ppathResult =
+            getPpathOrFail "ppath" data
 
         fullNameResult =
             getStrOrFail "full_name" data
@@ -88,9 +88,9 @@ parseBuffer data =
     -- This is ugly.
     -- Elm's pattern matching *should* have a nicer way to get the pure values out of this.
     -- I was limited by allowing only three values per pattern matched tuple.
-    if isJust pointerResult && isJust fullNameResult && isJust shortNameResult && isJust numberResult then
+    if isJust ppathResult && isJust fullNameResult && isJust shortNameResult && isJust numberResult then
         BufferOk
-            { pointer = getJust pointerResult
+            { ppath = getJust ppathResult
             , fullName = getJust fullNameResult
             , shortName = getJust shortNameResult
             , number = getJust numberResult
@@ -120,14 +120,14 @@ getJust maybe =
             Debug.todo "You f*cked up."
 
 
-getPointerOrFail : String -> Object -> Maybe String
-getPointerOrFail field object =
+getPpathOrFail : String -> Object -> Maybe (List String)
+getPpathOrFail field object =
     Dict.get field object
         |> Maybe.andThen
             (\weechatData ->
                 case weechatData of
-                    Ptr ptr ->
-                        Just ptr
+                    Pth ppath ->
+                        Just ppath
 
                     _ ->
                         Nothing
