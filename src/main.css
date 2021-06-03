@@ -46,4 +46,11 @@ body {
   flex: 1;
   flex-direction: column;
   width: auto;
+  max-height: 100vh;
+  overflow: auto;
+}
+
+.ChatContainer > .Line {
+  font-family:'Courier New', Courier, monospace;
+  text-align: left;
 }

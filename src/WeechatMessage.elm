@@ -12,7 +12,10 @@ type alias Message =
 
 type WeechatData
     = Str (Maybe String)
+    | Chr Char
     | Pth (List String)
+    | Ptr String
+    | Tim String
     | Inf ( String, String )
     | Int Int
     | Hda (List Object)
@@ -160,10 +163,24 @@ readType valueType numPointers bytes =
 
         "pth" ->
             let
-                ( pointers, pointerTail ) =
+                ( pointers, pointersTail ) =
                     readPpath [] bytes numPointers
             in
-            ( Pth pointers, pointerTail )
+            ( Pth pointers, pointersTail )
+
+        "ptr" ->
+            let
+                ( pointer, pointerTail ) =
+                    readStringData bytes
+            in
+            ( Ptr pointer, pointerTail )
+
+        "tim" ->
+            let
+                ( time, timeTail ) =
+                    readStringData bytes
+            in
+            ( Tim time, timeTail )
 
         "str" ->
             let
@@ -171,6 +188,13 @@ readType valueType numPointers bytes =
                     readString bytes
             in
             ( Str string, stringTail )
+
+        "chr" ->
+            let
+                ( char, charTail ) =
+                    readChar bytes
+            in
+            ( Chr char, charTail )
 
         _ ->
             ( Inv ("Invalid type: " ++ valueType), bytes )
@@ -192,14 +216,30 @@ splitKeyPair keyPair =
 
 
 
+-- String encoded data (pointer, time)
+
+
+readStringData : Bytes -> ( String, Bytes )
+readStringData bytes =
+    case bytes of
+        length :: tail ->
+            ( List.take length tail |> parseUTF8
+            , List.drop length tail
+            )
+
+        [] ->
+            ( "", [] )
+
+
+
 -- Ppath
 
 
 readPpath : List String -> Bytes -> Int -> ( List String, Bytes )
 readPpath acc bytes numPointers =
-    if numPointers == 0
-    then
-        (acc , bytes )
+    if numPointers == 0 then
+        ( acc, bytes )
+
     else
         case bytes of
             length :: tail ->
@@ -207,13 +247,14 @@ readPpath acc bytes numPointers =
                     pointer =
                         List.take length tail
                             |> parseUTF8
+
                     newAcc =
                         pointer :: acc
-                    
-                    newTail = List.drop length tail
-                    
+
+                    newTail =
+                        List.drop length tail
                 in
-                    readPpath newAcc newTail (numPointers - 1)
+                readPpath newAcc newTail (numPointers - 1)
 
             [] ->
                 ( [], [] )
@@ -256,6 +297,20 @@ parseNumber bytes =
 
         _ ->
             0
+
+
+
+-- Char
+
+
+readChar : Bytes -> ( Char, Bytes )
+readChar bytes =
+    case bytes of
+        head :: tail ->
+            ( Char.fromCode head, tail )
+
+        _ ->
+            ( '�', bytes )
 
 
 

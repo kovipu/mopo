@@ -1,4 +1,4 @@
-module DecodeMessage exposing (Buffer, BuffersResult(..), parseHdataBuffers)
+module DecodeMessage exposing (Buffer, BuffersResult(..), Line, LinesResult(..), parseHdataBuffers, parseHdataLines)
 
 import Dict exposing (Dict)
 import WeechatMessage exposing (Object, WeechatData(..))
@@ -100,6 +100,124 @@ parseBuffer data =
         BufferFailure "Invalid buffer."
 
 
+type LinesResult
+    = Lines (Dict String (List Line))
+    | LinesErr String
+
+
+type alias Line =
+    { ppath : List String
+    , buffer : String
+    , date : String
+    , prefix : Maybe String
+    , message : String
+    }
+
+
+parseHdataLines : WeechatData -> LinesResult
+parseHdataLines data =
+    case data of
+        Hda lines ->
+            let
+                parsedLines =
+                    List.map parseLine lines
+
+                _ =
+                    Debug.log "parsed lines" parsedLines
+            in
+            if allValidLines parsedLines then
+                List.map
+                    (\m ->
+                        case m of
+                            LineOk line ->
+                                line
+
+                            _ ->
+                                Debug.todo "This should never happen."
+                    )
+                    parsedLines
+                    |> groupLinesByBuffer
+                    |> Lines
+
+            else
+                LinesErr "An invalid message found."
+
+        _ ->
+            LinesErr "Datatype is not Hda."
+
+
+groupLinesByBuffer : List Line -> Dict String (List Line)
+groupLinesByBuffer lines =
+    List.foldr
+        (\m acc ->
+            let
+                oldBuffer =
+                    Dict.get m.buffer acc
+                        |> Maybe.withDefault []
+
+                newBuffer =
+                    m :: oldBuffer
+            in
+            Dict.insert m.buffer newBuffer acc
+        )
+        Dict.empty
+        lines
+
+
+allValidLines : List LineResult -> Bool
+allValidLines lines =
+    List.all
+        (\b ->
+            case b of
+                LineOk _ ->
+                    True
+
+                LineFailure fail ->
+                    False
+        )
+        lines
+
+
+type LineResult
+    = LineOk Line
+    | LineFailure String
+
+
+parseLine : Object -> LineResult
+parseLine data =
+    let
+        ppathResult =
+            getPpathOrFail "ppath" data
+
+        bufferResult =
+            getPointerOrFail "buffer" data
+
+        dateResult =
+            getTimeOrFail "date" data
+
+        prefixResult =
+            getMaybeStrOrFail "prefix" data
+
+        messageResult =
+            getStrOrFail "message" data
+    in
+    if isJust ppathResult && isJust bufferResult && isJust dateResult && isJust prefixResult && isJust messageResult then
+        LineOk
+            { ppath = getJust ppathResult
+            , buffer = getJust bufferResult
+            , date = getJust dateResult
+            , prefix = getJust prefixResult
+            , message = getJust messageResult
+            }
+
+    else
+        LineFailure "Invalid message."
+
+
+
+-- Maybe helpers.
+
+
 isJust : Maybe v -> Bool
 isJust maybe =
     case maybe of
@@ -120,6 +238,10 @@ getJust maybe =
             Debug.todo "You f*cked up."
 
 
+
+-- Object helpers.
+
+
 getPpathOrFail : String -> Object -> Maybe (List String)
 getPpathOrFail field object =
     Dict.get field object
@@ -128,6 +250,20 @@ getPpathOrFail field object =
                 case weechatData of
                     Pth ppath ->
                         Just ppath
+
+                    _ ->
+                        Nothing
+            )
+
+
+getPointerOrFail : String -> Object -> Maybe String
+getPointerOrFail field object =
+    Dict.get field object
+        |> Maybe.andThen
+            (\weechatData ->
+                case weechatData of
+                    Ptr pointer ->
+                        Just pointer
 
                     _ ->
                         Nothing
@@ -170,6 +306,20 @@ getIntOrFail field object =
                 case weechatData of
                     Int int ->
                         Just int
+
+                    _ ->
+                        Nothing
+            )
+
+
+getTimeOrFail : String -> Object -> Maybe String
+getTimeOrFail field object =
+    Dict.get field object
+        |> Maybe.andThen
+            (\weechatData ->
+                case weechatData of
+                    Tim time ->
+                        Just time
 
                     _ ->
                         Nothing
