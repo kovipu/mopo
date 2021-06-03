@@ -35,10 +35,18 @@ body {
   padding: 10px;
 }
 
-.Panel > .Buffers > .Buffer {
+.Buffer {
   list-style: none;
   padding: 5px;
   text-align: left;
+}
+
+.Buffer > button {
+  background: none;
+  border: none;
+  color: #fff;
+  font-size: 1rem;
+  cursor: pointer;
 }
 
 .ChatContainer {
@@ -50,7 +58,7 @@ body {
   overflow: auto;
 }
 
-.ChatContainer > .Line {
+.Line {
   font-family:'Courier New', Courier, monospace;
   text-align: left;
 }

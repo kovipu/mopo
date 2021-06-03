@@ -4,8 +4,9 @@ import Browser
 import Debug
 import DecodeMessage exposing (Buffer, BuffersResult(..), Line, LinesResult(..))
 import Dict exposing (Dict)
-import Html exposing (Html, div, h1, img, li, text, ul)
+import Html exposing (Html, button, div, h1, img, li, text, ul)
 import Html.Attributes exposing (class, src)
+import Html.Events exposing (onClick)
 import List
 import WeechatMessage exposing (Message, Object, WeechatData)
 
@@ -50,6 +51,7 @@ init =
 type Msg
     = Recv Bytes
     | Status Bool
+    | ChangeBuffer String
 
 
 type alias Bytes =
@@ -100,6 +102,11 @@ update msg model =
                             model
             in
             ( newModel
+            , Cmd.none
+            )
+
+        ChangeBuffer buffer ->
+            ( { model | currentBuffer = Just buffer }
             , Cmd.none
             )
 
@@ -159,11 +166,17 @@ view model =
 renderBuffer : Buffer -> Html Msg
 renderBuffer buffer =
     let
+        pointer =
+            List.head buffer.ppath
+                |> Maybe.withDefault "Missing buffer pointer."
+
         name =
             buffer.shortName
                 |> Maybe.withDefault buffer.fullName
     in
-    li [ class "Buffer" ] [ text name ]
+    li
+        [ class "Buffer" ]
+        [ button [ onClick (ChangeBuffer pointer) ] [ text name ] ]
 
 
 renderChat : Maybe String -> LinesModel -> List (Html Msg)
