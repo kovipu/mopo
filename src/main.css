@@ -58,7 +58,19 @@ body {
   overflow: auto;
 }
 
-.Line {
+.LineGroup {
   font-family:'Courier New', Courier, monospace;
   text-align: left;
+  margin: .3em;
+}
+
+.LineGroup > h1 {
+  color: salmon;
+  padding-bottom: .2em;
+}
+
+.LineGroup-messages {
+  padding: .6em;
+  border-left: .2em solid salmon;
+  border-radius: .2em;
 }

@@ -4,7 +4,7 @@ import Browser
 import Debug
 import DecodeMessage exposing (Buffer, BuffersResult(..), Line, LinesResult(..))
 import Dict exposing (Dict)
-import Html exposing (Html, button, div, h1, img, li, text, ul)
+import Html exposing (Html, button, div, h1, img, li, p, text, ul)
 import Html.Attributes exposing (class, src)
 import Html.Events exposing (onClick)
 import List
@@ -84,7 +84,13 @@ update msg model =
                                 Buffers buffers ->
                                     { model
                                         | buffers = BuffersLoaded buffers
-                                        , currentBuffer = List.head buffers |> Maybe.andThen (\b -> b.ppath |> List.head)
+                                        , currentBuffer =
+                                            List.head buffers
+                                                |> Maybe.andThen
+                                                    (\b ->
+                                                        b.ppath
+                                                            |> List.head
+                                                    )
                                     }
 
                                 BuffersErr buffersErr ->
@@ -118,10 +124,10 @@ update msg model =
 port socketStatus : (Bool -> msg) -> Sub msg
 
 
-port weechatSend : String -> Cmd msg
-
-
 port weechatReceive : (Bytes -> msg) -> Sub msg
+
+
+port weechatSend : String -> Cmd msg
 
 
 
@@ -201,7 +207,62 @@ renderChat currentBuffer linesModel =
 
 renderLines : List Line -> Maybe (List (Html Msg))
 renderLines lines =
-    Just (List.map (\l -> div [ class "Line" ] [ text l.message ]) lines)
+    let
+        linesGrouped =
+            List.foldl reducer [] lines
+
+        _ =
+            Debug.log "grouped" linesGrouped
+    in
+    List.foldr reducer [] lines
+        |> List.map renderLineGroup
+        |> Just
+
+
+renderLineGroup : LineGroup -> Html Msg
+renderLineGroup lineGroup =
+    div [ class "LineGroup" ]
+        [ h1 [] [ lineGroup.prefix |> Maybe.withDefault "Server" |> text ]
+        , div [ class "LineGroup-messages" ] (List.map (\m -> p [] [ text m ]) lineGroup.messages)
+        ]
+
+
+type alias LineGroup =
+    { prefix : Maybe String
+    , date : String
+    , messages : List String
+    }
+
+
+reducer : Line -> List LineGroup -> List LineGroup
+reducer line acc =
+    let
+        prevPrefix =
+            List.head acc
+                |> Maybe.andThen .prefix
+    in
+    case acc of
+        head :: tail ->
+            if line.prefix == prevPrefix then
+                { prefix = line.prefix
+                , date = line.date
+                , messages = line.message :: head.messages
+                }
+                    :: tail
+
+            else
+                { prefix = line.prefix
+                , date = line.date
+                , messages = [ line.message ]
+                }
+                    :: acc
+
+        [] ->
+            [ { prefix = line.prefix
+              , date = line.date
+              , messages = [ line.message ]
+              }
+            ]
 
 
 
