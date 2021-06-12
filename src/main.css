@@ -13,7 +13,8 @@ body {
   font-family: 'Source Sans Pro', 'Trebuchet MS', 'Lucida Grande', 'Bitstream Vera Sans', 'Helvetica Neue', sans-serif;
   margin: 0;
   text-align: center;
-  color: #fff;
+  font-weight: 500;
+  color: #d6deeb;
   background-color: #011627;
 }
 
@@ -44,7 +45,7 @@ body {
 .Buffer > button {
   background: none;
   border: none;
-  color: #fff;
+  color: #d6deeb;
   font-size: 1rem;
   cursor: pointer;
 }
@@ -65,7 +66,6 @@ body {
 }
 
 .LineGroup > h1 {
-  color: salmon;
   padding-bottom: .2em;
 }
 
@@ -73,4 +73,75 @@ body {
   padding: .6em;
   border-left: .2em solid salmon;
   border-radius: .2em;
+}
+
+/* foreground */
+.highlight-00,
+.highlight-F00 {
+  color: #d6deeb;
+}
+
+/* red */
+.highlight-01,
+.highlight-F01,
+.highlight-08 {
+  color: #da0f7a;
+}
+
+.highlight-09,
+.highlight-F09 {
+  color: #ff217c;
+}
+
+/* green */
+.highlight-02,
+.highlight-F02,
+.highlight-10,
+.highlight-F10,
+.highlight-28 {
+  color: #22da6e;
+}
+
+/* cyan */
+.highlight-03,
+.highlight-F03 {
+  color: #addb67;
+}
+.highlight-11,
+.highlight-F11 {
+  color: #7fdbca;
+}
+
+/* blue */
+.highlight-04,
+.highlight-F04,
+.highlight-12,
+.highlight-F12 {
+  color: #82AAFF;
+}
+
+/* magenta */
+.highlight-05,
+.highlight-F05,
+.highlight-13,
+.highlight-F13 {
+  color: #C792EA;
+}
+
+/* cyan */
+
+.highlight-06,
+.highlight-F06,
+.highlight-27 {
+  color: #21c7a8;
+}
+.highlight-14,
+.highlight-F14 {
+  color: #7fdbca;
+}
+
+/* white */
+.highlight-07,
+.highlight-15 {
+  color: #22da6e;
 }

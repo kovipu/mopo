@@ -4,10 +4,11 @@ import Browser
 import Debug
 import DecodeMessage exposing (Buffer, BuffersResult(..), Line, LinesResult(..))
 import Dict exposing (Dict)
-import Html exposing (Html, button, div, h1, img, li, p, text, ul)
+import Html exposing (Html, button, div, em, h1, img, li, p, text, ul)
 import Html.Attributes exposing (class, src)
 import Html.Events exposing (onClick)
 import List
+import Regex exposing (Regex)
 import WeechatMessage exposing (Message, Object, WeechatData)
 
 
@@ -207,24 +208,9 @@ renderChat currentBuffer linesModel =
 
 renderLines : List Line -> Maybe (List (Html Msg))
 renderLines lines =
-    let
-        linesGrouped =
-            List.foldl reducer [] lines
-
-        _ =
-            Debug.log "grouped" linesGrouped
-    in
     List.foldr reducer [] lines
         |> List.map renderLineGroup
         |> Just
-
-
-renderLineGroup : LineGroup -> Html Msg
-renderLineGroup lineGroup =
-    div [ class "LineGroup" ]
-        [ h1 [] [ lineGroup.prefix |> Maybe.withDefault "Server" |> text ]
-        , div [ class "LineGroup-messages" ] (List.map (\m -> p [] [ text m ]) lineGroup.messages)
-        ]
 
 
 type alias LineGroup =
@@ -263,6 +249,99 @@ reducer line acc =
               , messages = [ line.message ]
               }
             ]
+
+
+renderLineGroup : LineGroup -> Html Msg
+renderLineGroup lineGroup =
+    div [ class "LineGroup" ]
+        [ h1 [] (lineGroup.prefix |> Maybe.withDefault "Server" |> formatColoredText)
+        , div
+            [ class "LineGroup-messages" ]
+            (List.map
+                (\m ->
+                    p [] (formatColoredText m)
+                )
+                lineGroup.messages
+            )
+        ]
+
+
+formatColoredText : String -> List (Html Msg)
+formatColoredText line =
+    let
+        -- Your editor probably shows whitespace, but trust me the symbols are there.
+        -- 0x16
+        colorEscape =
+            ""
+
+        -- 0x1c
+        closeEscape =
+            ""
+
+        re =
+            Maybe.withDefault Regex.never <|
+                Regex.fromString (colorEscape ++ "|" ++ closeEscape)
+
+        splitAtColorCode =
+            Regex.splitAtMost 2 re line
+    in
+    case splitAtColorCode of
+        before :: inner :: tail ->
+            let
+                firstChar =
+                    String.left 1 inner
+
+                colorCodeLength =
+                    if isInt firstChar || firstChar == "F" then
+                        if firstChar == "F" then
+                            3
+
+                        else
+                            2
+
+                    else
+                        0
+
+                colorCode =
+                    String.left colorCodeLength inner
+
+                content =
+                    String.dropLeft colorCodeLength inner
+
+                className =
+                    "highlight-" ++ colorCode
+
+                tailJoined =
+                    if tail == [] then
+                        ""
+
+                    else
+                        colorEscape ++ String.join colorEscape tail
+            in
+            if colorCodeLength == 0 then
+                [ text before ] ++ formatColoredText content ++ formatColoredText tailJoined
+
+            else
+                [ text before
+                , em [ class className ] (formatColoredText content)
+                ]
+                    ++ formatColoredText tailJoined
+
+        [ msg ] ->
+            [ text msg ]
+
+        [] ->
+            []
+
+
+isInt : String -> Bool
+isInt s =
+    case String.toInt s of
+        Just _ ->
+            True
+
+        Nothing ->
+            False
 
 
 
