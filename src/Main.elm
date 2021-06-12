@@ -199,6 +199,7 @@ renderChat currentBuffer linesModel =
             case currentBuffer of
                 Just buffer ->
                     Dict.get buffer linesByBuffer
+                        |> Maybe.andThen (\m -> Just (List.take 100 m))
                         |> Maybe.andThen renderLines
                         |> Maybe.withDefault [ text "Invalid buffer selected." ]
 
