@@ -257,12 +257,13 @@ renderLineGroup lineGroup =
         [ h1 [] (lineGroup.prefix |> Maybe.withDefault "Server" |> formatColoredText)
         , div
             [ class "LineGroup-messages" ]
-            (List.map
-                (\m ->
-                    p [] (formatColoredText m)
-                )
-                lineGroup.messages
-            )
+            (lineGroup.messages
+                |> List.reverse
+                |> (List.map
+                    (\m ->
+                        p [] (formatColoredText m)
+                    )
+            ))
         ]
 
 

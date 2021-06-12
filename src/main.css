@@ -53,7 +53,7 @@ body {
 .ChatContainer {
   display: flex;
   flex: 1;
-  flex-direction: column;
+  flex-direction: column-reverse;
   width: auto;
   max-height: 100vh;
   overflow: auto;

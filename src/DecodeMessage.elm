@@ -148,7 +148,7 @@ parseHdataLines data =
 
 groupLinesByBuffer : List Line -> Dict String (List Line)
 groupLinesByBuffer lines =
-    List.foldr
+    List.foldl
         (\m acc ->
             let
                 oldBuffer =
