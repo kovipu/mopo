@@ -2,7 +2,7 @@ port module Main exposing (..)
 
 import Browser
 import Debug
-import DecodeMessage exposing (Buffer, BuffersResult(..), Line, LinesResult(..))
+import DecodeMessage exposing (Buffer, BuffersResult(..), Line, LineResult(..), LinesResult(..))
 import Dict exposing (Dict)
 import Html exposing (Html, button, div, em, h1, img, li, p, text, ul)
 import Html.Attributes exposing (class, src)
@@ -67,7 +67,8 @@ update msg model =
             , Cmd.batch
                 -- Init needs to be last for it to be sent first.
                 -- This might cause a race condition.
-                [ weechatSend "(hdata_lines) hdata buffer:gui_buffers(*)/own_lines/first_line(*)/data message,buffer,date,prefix\n"
+                [ weechatSend "sync\n"
+                , weechatSend "(hdata_lines) hdata buffer:gui_buffers(*)/own_lines/first_line(*)/data message,buffer,date,prefix\n"
                 , weechatSend "(hdata_buffers) hdata buffer:gui_buffers(*) number,full_name,short_name\n"
                 , weechatSend "init password=test,compression=off\n"
                 ]
@@ -104,6 +105,33 @@ update msg model =
 
                                 LinesErr linesErr ->
                                     { model | lines = LinesError linesErr }
+
+                        Just "_buffer_line_added" ->
+                            case DecodeMessage.parseBufferLineAdded data of
+                                LineOk line ->
+                                    case model.lines of
+                                        LinesLoaded lines ->
+                                            let
+                                                -- Add line to correct buffer.
+                                                newLines =
+                                                    Dict.update line.buffer
+                                                        (\oldBuffer ->
+                                                            case oldBuffer of
+                                                                Just oldLines ->
+                                                                    Just (line :: oldLines)
+
+                                                                Nothing ->
+                                                                    Just [ line ]
+                                                        )
+                                                        lines
+                                            in
+                                            { model | lines = LinesLoaded newLines }
+
+                                        _ ->
+                                            model
+
+                                LineFailure err ->
+                                    { model | lines = LinesError err }
 
                         _ ->
                             model
@@ -146,10 +174,6 @@ subscriptions =
 
 view : Model -> Html Msg
 view model =
-    let
-        _ =
-            Debug.log "model" model
-    in
     div [ class "Container" ]
         [ div [ class "Panel" ]
             [ ul [ class "Buffers" ]
@@ -260,11 +284,11 @@ renderLineGroup lineGroup =
             [ class "LineGroup-messages" ]
             (lineGroup.messages
                 |> List.reverse
-                |> (List.map
+                |> List.map
                     (\m ->
                         p [] (formatColoredText m)
                     )
-            ))
+            )
         ]
 
 

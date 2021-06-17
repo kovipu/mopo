@@ -1,4 +1,4 @@
-module DecodeMessage exposing (Buffer, BuffersResult(..), Line, LinesResult(..), parseHdataBuffers, parseHdataLines)
+module DecodeMessage exposing (Buffer, BuffersResult(..), Line, LineResult(..), LinesResult(..), parseBufferLineAdded, parseHdataBuffers, parseHdataLines)
 
 import Dict exposing (Dict)
 import WeechatMessage exposing (Object, WeechatData(..))
@@ -8,6 +8,7 @@ import WeechatMessage exposing (Object, WeechatData(..))
 -- This file includes parsers from WeechatData into specified objects.
 -- This is somewhat inspired by Elm's amazing Json.Decode.
 -- I'm just not decoding from json here, so had to build something custom.
+-- parse hdata_buffers
 
 
 type alias Buffer =
@@ -114,6 +115,10 @@ type alias Line =
     }
 
 
+
+-- parse hdata_lines
+
+
 parseHdataLines : WeechatData -> LinesResult
 parseHdataLines data =
     case data of
@@ -121,9 +126,6 @@ parseHdataLines data =
             let
                 parsedLines =
                     List.map parseLine lines
-
-                _ =
-                    Debug.log "parsed lines" parsedLines
             in
             if allValidLines parsedLines then
                 List.map
@@ -212,6 +214,25 @@ parseLine data =
 
     else
         LineFailure "Invalid message."
+
+
+
+-- parse _buffer_line_added
+
+
+parseBufferLineAdded : WeechatData -> LineResult
+parseBufferLineAdded data =
+    case data of
+        Hda objects ->
+            case List.head objects of
+                Just object ->
+                    parseLine object
+
+                Nothing ->
+                    LineFailure "Empty array."
+
+        _ ->
+            LineFailure "Datatype is not Hda."
 
 
 

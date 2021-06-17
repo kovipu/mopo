@@ -339,8 +339,10 @@ readArray bytes =
 
                 length =
                     List.drop 3 arrayData
-                        |> List.take 4
                         |> parseNumber
+
+                data =
+                    List.drop 7 arrayData
             in
             readArrayRecursive [] dataType length data
 
