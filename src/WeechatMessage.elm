@@ -19,6 +19,7 @@ type WeechatData
     | Inf ( String, String )
     | Int Int
     | Hda (List Object)
+    | Arr (List WeechatData)
     | Inv String
 
 
@@ -196,6 +197,13 @@ readType valueType numPointers bytes =
             in
             ( Chr char, charTail )
 
+        "arr" ->
+            let
+                ( array, arrayTail ) =
+                    readArray bytes
+            in
+            ( Arr array, arrayTail )
+
         _ ->
             ( Inv ("Invalid type: " ++ valueType), bytes )
 
@@ -311,6 +319,46 @@ readChar bytes =
 
         _ ->
             ( '�', bytes )
+
+
+
+-- Array
+
+
+readArray : Bytes -> ( List WeechatData, Bytes )
+readArray bytes =
+    case bytes of
+        [] ->
+            ( [], bytes )
+
+        arrayData ->
+            let
+                dataType =
+                    List.take 3 arrayData
+                        |> parseUTF8
+
+                length =
+                    List.drop 3 arrayData
+                        |> List.take 4
+                        |> parseNumber
+            in
+            readArrayRecursive [] dataType length data
+
+
+readArrayRecursive : List WeechatData -> String -> Int -> Bytes -> ( List WeechatData, Bytes )
+readArrayRecursive acc dataType length bytes =
+    if length == 0 then
+        ( acc, bytes )
+
+    else
+        let
+            ( value, tail ) =
+                readType dataType 0 bytes
+
+            newAcc =
+                acc ++ [ value ]
+        in
+        readArrayRecursive newAcc dataType (length - 1) tail
 
 
 
