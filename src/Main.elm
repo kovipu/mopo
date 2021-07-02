@@ -1,6 +1,7 @@
 port module Main exposing (..)
 
 import Browser
+import Constants exposing (closeEscape, colorEscape)
 import Debug
 import DecodeMessage exposing (Buffer, BuffersResult(..), Line, LineResult(..), LinesResult(..))
 import Dict exposing (Dict)
@@ -295,15 +296,6 @@ renderLineGroup lineGroup =
 formatColoredText : String -> List (Html Msg)
 formatColoredText line =
     let
-        -- Your editor probably shows whitespace, but trust me the symbols are there.
-        -- 0x16
-        colorEscape =
-            ""
-
-        -- 0x1c
-        closeEscape =
-            ""
-
         re =
             Maybe.withDefault Regex.never <|
                 Regex.fromString (colorEscape ++ "|" ++ closeEscape)
