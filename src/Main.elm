@@ -5,9 +5,10 @@ import Constants exposing (closeEscape, colorEscape)
 import Debug
 import DecodeMessage exposing (Buffer, BuffersResult(..), Line, LineResult(..), LinesResult(..))
 import Dict exposing (Dict)
-import Html exposing (Html, button, div, em, h1, img, li, p, text, ul)
-import Html.Attributes exposing (class, src)
-import Html.Events exposing (onClick)
+import Html exposing (Attribute, Html, button, div, em, h1, img, input, li, p, text, ul)
+import Html.Attributes exposing (..)
+import Html.Events exposing (keyCode, on, onClick, onInput)
+import Json.Decode as Json
 import List
 import Regex exposing (Regex)
 import WeechatMessage exposing (Message, Object, WeechatData)
@@ -21,6 +22,7 @@ type alias Model =
     { buffers : BuffersModel
     , currentBuffer : Maybe String
     , lines : LinesModel
+    , messageInput : String
     }
 
 
@@ -41,6 +43,7 @@ init =
     ( { buffers = BuffersLoading
       , currentBuffer = Nothing
       , lines = LinesLoading
+      , messageInput = ""
       }
     , Cmd.none
     )
@@ -54,6 +57,8 @@ type Msg
     = Recv Bytes
     | Status Bool
     | ChangeBuffer String
+    | ChangeInput String
+    | KeyDown Int
 
 
 type alias Bytes =
@@ -135,6 +140,10 @@ update msg model =
                                     { model | lines = LinesError err }
 
                         _ ->
+                            let
+                                d =
+                                    Debug.log "unknow" id
+                            in
                             model
             in
             ( newModel
@@ -145,6 +154,37 @@ update msg model =
             ( { model | currentBuffer = Just buffer }
             , Cmd.none
             )
+
+        -- Save message to model on change.
+        ChangeInput message ->
+            ( { model | messageInput = message }
+            , Cmd.none
+            )
+
+        -- Send message on enter pressed.
+        KeyDown key ->
+            if key == 13 then
+                let
+                    currentBuffer =
+                        case model.currentBuffer of
+                            Just buffer ->
+                                buffer
+
+                            Nothing ->
+                                Debug.todo "You tried to send without selecting a buffer."
+
+                    message =
+                        "input 0x" ++ currentBuffer ++ " " ++ model.messageInput ++ "\n"
+
+                    m =
+                        Debug.log "message" message
+                in
+                ( { model | messageInput = "" }
+                , weechatSend message
+                )
+
+            else
+                ( model, Cmd.none )
 
 
 
@@ -191,7 +231,9 @@ view model =
             ]
         , div
             [ class "ChatContainer" ]
-            (renderChat model.currentBuffer model.lines)
+            [ renderChat model.currentBuffer model.lines
+            , renderMessageInput model.messageInput
+            ]
         ]
 
 
@@ -211,25 +253,27 @@ renderBuffer buffer =
         [ button [ onClick (ChangeBuffer pointer) ] [ text name ] ]
 
 
-renderChat : Maybe String -> LinesModel -> List (Html Msg)
+renderChat : Maybe String -> LinesModel -> Html Msg
 renderChat currentBuffer linesModel =
-    case linesModel of
-        LinesLoading ->
-            [ text "loading lines..." ]
+    div [ class "LinesContainer" ]
+        (case linesModel of
+            LinesLoading ->
+                [ text "loading lines..." ]
 
-        LinesError err ->
-            [ text err ]
+            LinesError err ->
+                [ text err ]
 
-        LinesLoaded linesByBuffer ->
-            case currentBuffer of
-                Just buffer ->
-                    Dict.get buffer linesByBuffer
-                        |> Maybe.andThen (\m -> Just (List.take 100 m))
-                        |> Maybe.andThen renderLines
-                        |> Maybe.withDefault [ text "Invalid buffer selected." ]
+            LinesLoaded linesByBuffer ->
+                case currentBuffer of
+                    Just buffer ->
+                        Dict.get buffer linesByBuffer
+                            |> Maybe.andThen (\m -> Just (List.take 100 m))
+                            |> Maybe.andThen renderLines
+                            |> Maybe.withDefault [ text "Invalid buffer selected." ]
 
-                Nothing ->
-                    [ text "No buffer selected" ]
+                    Nothing ->
+                        [ text "No buffer selected" ]
+        )
 
 
 renderLines : List Line -> Maybe (List (Html Msg))
@@ -360,6 +404,23 @@ isInt s =
 
         Nothing ->
             False
+
+
+renderMessageInput : String -> Html Msg
+renderMessageInput messageInput =
+    input
+        [ class "MessageInput"
+        , placeholder "Message"
+        , onInput ChangeInput
+        , onKeyDown KeyDown
+        , value messageInput
+        ]
+        []
+
+
+onKeyDown : (Int -> msg) -> Attribute msg
+onKeyDown tagger =
+    on "keydown" (Json.map tagger keyCode)
 
 
 
