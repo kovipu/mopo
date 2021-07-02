@@ -52,6 +52,8 @@ body {
 .ChatContainer {
   width: auto;
   max-height: 100vh;
+  display: flex;
+  flex-direction: column;
 }
 
 .LinesContainer {
@@ -78,7 +80,6 @@ body {
 }
 
 .MessageInput {
-  width: 100%;
   height: 50px;
   background-color: #000b15;
   color: #fff;
@@ -93,6 +94,10 @@ body {
 .highlight-F00 {
   color: #d6deeb;
 }
+.border-color-00,
+.border-color-F00 {
+  border-color: #d6deeb;
+}
 
 /* red */
 .highlight-01,
@@ -100,10 +105,19 @@ body {
 .highlight-08 {
   color: #da0f7a;
 }
+.border-color-01,
+.border-color-F01,
+.border-color-08 {
+  border-color: #da0f7a;
+}
 
 .highlight-09,
 .highlight-F09 {
   color: #ff217c;
+}
+.border-color-09,
+.border-color-F09 {
+  border-color: #ff217c;
 }
 
 /* green */
@@ -114,15 +128,30 @@ body {
 .highlight-28 {
   color: #22da6e;
 }
+.border-color-02,
+.border-color-F02,
+.border-color-10,
+.border-color-F10,
+.border-color-28 {
+  border-color: #22da6e;
+}
 
 /* cyan */
 .highlight-03,
 .highlight-F03 {
   color: #addb67;
 }
+.border-color-03,
+.border-color-F03 {
+  border-color: #addb67;
+}
 .highlight-11,
 .highlight-F11 {
   color: #7fdbca;
+}
+.border-color-11,
+.border-color-F11 {
+  border-color: #7fdbca;
 }
 
 /* blue */
@@ -132,6 +161,12 @@ body {
 .highlight-F12 {
   color: #82AAFF;
 }
+.border-color-04,
+.border-color-F04,
+.border-color-12,
+.border-color-F12 {
+  border-color: #82AAFF;
+}
 
 /* magenta */
 .highlight-05,
@@ -140,21 +175,39 @@ body {
 .highlight-F13 {
   color: #C792EA;
 }
+.border-color-05,
+.border-color-F05,
+.border-color-13,
+.border-color-F13 {
+  border-color: #C792EA;
+}
 
 /* cyan */
-
 .highlight-06,
 .highlight-F06,
 .highlight-27 {
   color: #21c7a8;
 }
+.border-color-06,
+.border-color-F06,
+.border-color-27 {
+  border-color: #21c7a8;
+}
 .highlight-14,
 .highlight-F14 {
   color: #7fdbca;
+}
+.border-color-14,
+.border-color-F14 {
+  border-color: #7fdbca;
 }
 
 /* white */
 .highlight-07,
 .highlight-15 {
   color: #22da6e;
+}
+.border-color-07,
+.border-color-15 {
+  border-color: #22da6e;
 }

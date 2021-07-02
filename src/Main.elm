@@ -323,10 +323,29 @@ reducer line acc =
 
 renderLineGroup : LineGroup -> Html Msg
 renderLineGroup lineGroup =
+    let
+        nick =
+            lineGroup.prefix
+                |> Maybe.withDefault "Server"
+
+        escapeChar =
+            String.slice 4 5 nick
+
+        nickColor =
+            if escapeChar == colorEscape then
+                if String.slice 5 6 nick == "F" then
+                    String.slice 5 8 nick
+
+                else
+                    String.slice 5 7 nick
+
+            else
+                "F00"
+    in
     div [ class "LineGroup" ]
         [ h1 [] (lineGroup.prefix |> Maybe.withDefault "Server" |> formatColoredText)
         , div
-            [ class "LineGroup-messages" ]
+            [ class ("LineGroup-messages border-color-" ++ nickColor) ]
             (lineGroup.messages
                 |> List.reverse
                 |> List.map
