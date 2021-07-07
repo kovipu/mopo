@@ -5,15 +5,16 @@ import Constants exposing (closeEscape, colorEscape)
 import Debug
 import DecodeMessage exposing (BuffersResult(..), LineResult(..), LinesResult(..))
 import Dict exposing (Dict)
-import Html exposing (Attribute, Html, button, div, em, h1, img, input, li, p, text, ul)
+import Html exposing (Attribute, Html, div, em, h1, img, input, p, text)
 import Html.Attributes exposing (..)
-import Html.Events exposing (keyCode, on, onClick, onInput)
+import Html.Events exposing (keyCode, on, onInput)
 import Json.Decode as Json
 import List
 import Regex exposing (Regex)
 import Types.Bytes exposing (Bytes)
 import Types.Model as Model exposing (Buffer, BuffersModel(..), Line, LinesModel(..), Model)
 import Types.Msg exposing (Msg(..))
+import View.Panel as Panel
 import WeechatMessage exposing (Message, Object, WeechatData)
 
 
@@ -176,41 +177,13 @@ view model =
             Debug.log "model" model.buffers
     in
     div [ class "Container" ]
-        [ div [ class "Panel" ]
-            [ ul [ class "Buffers" ]
-                (case model.buffers of
-                    BuffersLoading ->
-                        [ text "Loading buffers..." ]
-
-                    BuffersError err ->
-                        [ text err ]
-
-                    BuffersLoaded buffers ->
-                        List.map renderBuffer buffers
-                )
-            ]
+        [ Panel.render model.buffers
         , div
             [ class "ChatContainer" ]
             [ renderChat model.currentBuffer model.lines
             , renderMessageInput model.messageInput
             ]
         ]
-
-
-renderBuffer : Buffer -> Html Msg
-renderBuffer buffer =
-    let
-        pointer =
-            List.head buffer.ppath
-                |> Maybe.withDefault "Missing buffer pointer."
-
-        name =
-            buffer.shortName
-                |> Maybe.withDefault buffer.fullName
-    in
-    li
-        [ class "Buffer" ]
-        [ button [ onClick (ChangeBuffer pointer) ] [ text name ] ]
 
 
 renderChat : Maybe String -> LinesModel -> Html Msg
