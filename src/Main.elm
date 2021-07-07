@@ -3,7 +3,7 @@ port module Main exposing (..)
 import Browser
 import Constants exposing (closeEscape, colorEscape)
 import Debug
-import DecodeMessage exposing (Buffer, BuffersResult(..), Line, LineResult(..), LinesResult(..))
+import DecodeMessage exposing (BuffersResult(..), LineResult(..), LinesResult(..))
 import Dict exposing (Dict)
 import Html exposing (Attribute, Html, button, div, em, h1, img, input, li, p, text, ul)
 import Html.Attributes exposing (..)
@@ -11,58 +11,14 @@ import Html.Events exposing (keyCode, on, onClick, onInput)
 import Json.Decode as Json
 import List
 import Regex exposing (Regex)
+import Types.Bytes exposing (Bytes)
+import Types.Model as Model exposing (Buffer, BuffersModel(..), Line, LinesModel(..), Model)
+import Types.Msg exposing (Msg(..))
 import WeechatMessage exposing (Message, Object, WeechatData)
 
 
 
----- MODEL ----
-
-
-type alias Model =
-    { buffers : BuffersModel
-    , currentBuffer : Maybe String
-    , lines : LinesModel
-    , messageInput : String
-    }
-
-
-type BuffersModel
-    = BuffersLoaded (List Buffer)
-    | BuffersLoading
-    | BuffersError String
-
-
-type LinesModel
-    = LinesLoaded (Dict String (List Line))
-    | LinesLoading
-    | LinesError String
-
-
-init : ( Model, Cmd Msg )
-init =
-    ( { buffers = BuffersLoading
-      , currentBuffer = Nothing
-      , lines = LinesLoading
-      , messageInput = ""
-      }
-    , Cmd.none
-    )
-
-
-
 ---- UPDATE ----
-
-
-type Msg
-    = Recv Bytes
-    | Status Bool
-    | ChangeBuffer String
-    | ChangeInput String
-    | KeyDown Int
-
-
-type alias Bytes =
-    List Int
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
@@ -215,6 +171,10 @@ subscriptions =
 
 view : Model -> Html Msg
 view model =
+    let
+        _ =
+            Debug.log "model" model.buffers
+    in
     div [ class "Container" ]
         [ div [ class "Panel" ]
             [ ul [ class "Buffers" ]
@@ -450,7 +410,7 @@ main : Program () Model Msg
 main =
     Browser.element
         { view = view
-        , init = \_ -> init
+        , init = \_ -> ( Model.default, Cmd.none )
         , update = update
         , subscriptions = \_ -> subscriptions
         }

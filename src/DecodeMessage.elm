@@ -1,6 +1,7 @@
-module DecodeMessage exposing (Buffer, BuffersResult(..), Line, LineResult(..), LinesResult(..), parseBufferLineAdded, parseHdataBuffers, parseHdataLines)
+module DecodeMessage exposing (BuffersResult(..), LineResult(..), LinesResult(..), parseBufferLineAdded, parseHdataBuffers, parseHdataLines)
 
 import Dict exposing (Dict)
+import Types.Model exposing (Buffer, Line)
 import WeechatMessage exposing (Object, WeechatData(..))
 
 
@@ -9,14 +10,6 @@ import WeechatMessage exposing (Object, WeechatData(..))
 -- This is somewhat inspired by Elm's amazing Json.Decode.
 -- I'm just not decoding from json here, so had to build something custom.
 -- parse hdata_buffers
-
-
-type alias Buffer =
-    { ppath : List String
-    , fullName : String
-    , shortName : Maybe String
-    , number : Int
-    }
 
 
 type BuffersResult
@@ -104,15 +97,6 @@ parseBuffer data =
 type LinesResult
     = Lines (Dict String (List Line))
     | LinesErr String
-
-
-type alias Line =
-    { ppath : List String
-    , buffer : String
-    , date : String
-    , prefix : Maybe String
-    , message : String
-    }
 
 
 
