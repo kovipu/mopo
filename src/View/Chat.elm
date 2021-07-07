@@ -1,13 +1,12 @@
 module View.Chat exposing (render)
 
-import Types.Model exposing (LinesModel(..), Line)
-import Types.Msg exposing (Msg)
-import Html exposing (Html, div, text, em, h1, p)
-import Html.Attributes exposing (..)
-import Dict exposing (Dict)
-
-import Regex exposing (Regex)
 import Constants exposing (closeEscape, colorEscape)
+import Dict exposing (Dict)
+import Html exposing (Html, div, em, h1, p, text)
+import Html.Attributes exposing (..)
+import Regex exposing (Regex)
+import Types.Model exposing (Line, LinesModel(..))
+import Types.Msg exposing (Msg)
 
 
 

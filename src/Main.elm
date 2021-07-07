@@ -4,16 +4,15 @@ import Browser
 import Debug
 import DecodeMessage exposing (BuffersResult(..), LineResult(..), LinesResult(..))
 import Dict exposing (Dict)
-import Html exposing (Attribute, Html, div, em, h1, img, input, p, text)
+import Html exposing (Html, div, em, h1, img, input, p, text)
 import Html.Attributes exposing (..)
-import Html.Events exposing (keyCode, on, onInput)
-import Json.Decode as Json
 import List
 import Types.Bytes exposing (Bytes)
 import Types.Model as Model exposing (Buffer, BuffersModel(..), Line, LinesModel(..), Model)
 import Types.Msg exposing (Msg(..))
-import View.Panel as Panel
 import View.Chat as Chat
+import View.MessageInput as MessageInput
+import View.Panel as Panel
 import WeechatMessage exposing (Message, Object, WeechatData)
 
 
@@ -96,10 +95,6 @@ update msg model =
                                     { model | lines = LinesError err }
 
                         _ ->
-                            let
-                                d =
-                                    Debug.log "unknow" id
-                            in
                             model
             in
             ( newModel
@@ -171,35 +166,14 @@ subscriptions =
 
 view : Model -> Html Msg
 view model =
-    let
-        _ =
-            Debug.log "model" model.buffers
-    in
     div [ class "Container" ]
         [ Panel.render model.buffers
         , div
             [ class "ChatContainer" ]
             [ Chat.render model.currentBuffer model.lines
-            , renderMessageInput model.messageInput
+            , MessageInput.render model.messageInput
             ]
         ]
-
-
-renderMessageInput : String -> Html Msg
-renderMessageInput messageInput =
-    input
-        [ class "MessageInput"
-        , placeholder "Message"
-        , onInput ChangeInput
-        , onKeyDown KeyDown
-        , value messageInput
-        ]
-        []
-
-
-onKeyDown : (Int -> msg) -> Attribute msg
-onKeyDown tagger =
-    on "keydown" (Json.map tagger keyCode)
 
 
 
