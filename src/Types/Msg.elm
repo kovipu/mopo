@@ -12,4 +12,4 @@ type Msg
     | Status Bool
     | ChangeBuffer String
     | ChangeInput String
-    | KeyDown Int
+    | SendMessage

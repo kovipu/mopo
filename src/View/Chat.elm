@@ -2,9 +2,12 @@ module View.Chat exposing (render)
 
 import Constants exposing (closeEscape, colorEscape)
 import Dict exposing (Dict)
-import Html exposing (Html, div, em, h1, p, text)
-import Html.Attributes exposing (..)
+import Element exposing (..)
+import Element.Background as Background
+import Element.Border as Border
+import Element.Font as Font
 import Regex exposing (Regex)
+import Theme exposing (theme)
 import Types.Model exposing (Line, LinesModel(..))
 import Types.Msg exposing (Msg)
 
@@ -13,9 +16,15 @@ import Types.Msg exposing (Msg)
 ---- CHAT ----
 
 
-render : Maybe String -> LinesModel -> Html Msg
+render : Maybe String -> LinesModel -> Element Msg
 render currentBuffer linesModel =
-    div [ class "LinesContainer" ]
+    column
+        [ height fill
+        , width fill
+        , Background.color theme.chatColor
+        , Font.color theme.mainTextColor
+        , scrollbarY
+        ]
         (case linesModel of
             LinesLoading ->
                 [ text "loading lines..." ]
@@ -36,7 +45,7 @@ render currentBuffer linesModel =
         )
 
 
-renderLines : List Line -> Maybe (List (Html Msg))
+renderLines : List Line -> Maybe (List (Element Msg))
 renderLines lines =
     List.foldr reducer [] lines
         |> List.map renderLineGroup
@@ -81,7 +90,7 @@ reducer line acc =
             ]
 
 
-renderLineGroup : LineGroup -> Html Msg
+renderLineGroup : LineGroup -> Element Msg
 renderLineGroup lineGroup =
     let
         nick =
@@ -102,21 +111,28 @@ renderLineGroup lineGroup =
             else
                 "F00"
     in
-    div [ class "LineGroup" ]
-        [ h1 [] (lineGroup.prefix |> Maybe.withDefault "Server" |> formatColoredText)
-        , div
-            [ class ("LineGroup-messages border-color-" ++ nickColor) ]
+    column
+        [ paddingXY 5 2
+        ]
+        [ row
+            [ paddingXY 0 2 ]
+            (lineGroup.prefix |> Maybe.withDefault "Server" |> formatColoredText)
+        , column
+            [ padding 5
+            , Border.widthEach { left = 2, bottom = 0, top = 0, right = 0 }
+            , Border.roundEach { topLeft = 2, bottomLeft = 2, topRight = 0, bottomRight = 0 }
+            , Border.color (Theme.colorCode nickColor)
+            ]
             (lineGroup.messages
-                |> List.reverse
                 |> List.map
                     (\m ->
-                        p [] (formatColoredText m)
+                        paragraph [] (formatColoredText m)
                     )
             )
         ]
 
 
-formatColoredText : String -> List (Html Msg)
+formatColoredText : String -> List (Element Msg)
 formatColoredText line =
     let
         re =
@@ -164,7 +180,9 @@ formatColoredText line =
 
             else
                 [ text before
-                , em [ class className ] (formatColoredText content)
+                , paragraph
+                    [ Font.color (Theme.colorCode colorCode) ]
+                    (formatColoredText content)
                 ]
                     ++ formatColoredText tailJoined
 

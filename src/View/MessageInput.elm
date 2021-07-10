@@ -1,27 +1,48 @@
 module View.MessageInput exposing (render)
 
-import Html exposing (Attribute, Html, input)
-import Html.Attributes exposing (..)
-import Html.Events exposing (keyCode, on, onInput)
-import Json.Decode as Json
+import Element exposing (..)
+import Element.Background as Background
+import Element.Border as Border
+import Element.Font as Font
+import Element.Input as Input exposing (text)
+import Html exposing (Html)
+import Html.Events
+import Json.Decode as Decode
+import Theme exposing (theme)
 import Types.Msg exposing (Msg(..))
 
 
----- MessageInput ----
+
+---- MESSAGEINPUT ----
 
 
-render : String -> Html Msg
+render : String -> Element Msg
 render messageInput =
-    input
-        [ class "MessageInput"
-        , placeholder "Message"
-        , onInput ChangeInput
-        , onKeyDown KeyDown
-        , value messageInput
+    Input.text
+        [ onEnter SendMessage
+        , Background.color theme.messageInputColor
+        , Border.width 0
+        , Font.color theme.mainTextColor
         ]
-        []
+        { onChange = \m -> ChangeInput m
+        , text = messageInput
+        , placeholder = Nothing
+        , label = Input.labelHidden "MessageInput"
+        }
 
 
-onKeyDown : (Int -> msg) -> Attribute msg
-onKeyDown tagger =
-    on "keydown" (Json.map tagger keyCode)
+onEnter : msg -> Element.Attribute msg
+onEnter msg =
+    Element.htmlAttribute
+        (Html.Events.on "keyup"
+            (Decode.field "key" Decode.string
+                |> Decode.andThen
+                    (\key ->
+                        if key == "Enter" then
+                            Decode.succeed msg
+
+                        else
+                            Decode.fail "Not the enter key"
+                    )
+            )
+        )

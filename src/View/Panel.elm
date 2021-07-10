@@ -1,8 +1,11 @@
 module View.Panel exposing (render)
 
-import Html exposing (Html, button, div, li, text, ul)
-import Html.Attributes exposing (..)
+import Element exposing (..)
+import Element.Background as Background
+import Element.Font as Font
+import Element.Input as Input
 import Html.Events exposing (onClick)
+import Theme exposing (theme)
 import Types.Model exposing (Buffer, BuffersModel(..))
 import Types.Msg exposing (Msg(..))
 
@@ -11,24 +14,28 @@ import Types.Msg exposing (Msg(..))
 ---- PANEL ----
 
 
-render : BuffersModel -> Html Msg
+render : BuffersModel -> Element Msg
 render bufferModel =
-    div [ class "Panel" ]
-        [ ul [ class "Buffers" ]
-            (case bufferModel of
-                BuffersLoading ->
-                    [ text "Loading buffers..." ]
-
-                BuffersError err ->
-                    [ text err ]
-
-                BuffersLoaded buffers ->
-                    List.map renderBuffer buffers
-            )
+    column
+        [ height fill
+        , width <| fillPortion 1
+        , paddingXY 0 10
+        , Font.color theme.mainTextColor
+        , Background.color theme.panelColor
         ]
+        (case bufferModel of
+            BuffersLoading ->
+                [ text "Loading buffers..." ]
+
+            BuffersError err ->
+                [ text err ]
+
+            BuffersLoaded buffers ->
+                List.map renderBuffer buffers
+        )
 
 
-renderBuffer : Buffer -> Html Msg
+renderBuffer : Buffer -> Element Msg
 renderBuffer buffer =
     let
         pointer =
@@ -39,6 +46,9 @@ renderBuffer buffer =
             buffer.shortName
                 |> Maybe.withDefault buffer.fullName
     in
-    li
-        [ class "Buffer" ]
-        [ button [ onClick (ChangeBuffer pointer) ] [ text name ] ]
+    Input.button
+        [ paddingXY 15 5
+        ]
+        { onPress = Just (ChangeBuffer pointer)
+        , label = text name
+        }

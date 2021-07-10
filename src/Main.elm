@@ -4,9 +4,11 @@ import Browser
 import Debug
 import DecodeMessage exposing (BuffersResult(..), LineResult(..), LinesResult(..))
 import Dict exposing (Dict)
-import Html exposing (Html, div, em, h1, img, input, p, text)
-import Html.Attributes exposing (..)
+import Element exposing (..)
+import Element.Background as Background
+import Html exposing (Html)
 import List
+import Theme exposing (theme)
 import Types.Bytes exposing (Bytes)
 import Types.Model as Model exposing (Buffer, BuffersModel(..), Line, LinesModel(..), Model)
 import Types.Msg exposing (Msg(..))
@@ -79,7 +81,7 @@ update msg model =
                                                         (\oldBuffer ->
                                                             case oldBuffer of
                                                                 Just oldLines ->
-                                                                    Just (line :: oldLines)
+                                                                    Just (oldLines ++ [ line ])
 
                                                                 Nothing ->
                                                                     Just [ line ]
@@ -113,29 +115,25 @@ update msg model =
             )
 
         -- Send message on enter pressed.
-        KeyDown key ->
-            if key == 13 then
-                let
-                    currentBuffer =
-                        case model.currentBuffer of
-                            Just buffer ->
-                                buffer
+        SendMessage ->
+            let
+                currentBuffer =
+                    case model.currentBuffer of
+                        Just buffer ->
+                            buffer
 
-                            Nothing ->
-                                Debug.todo "You tried to send without selecting a buffer."
+                        Nothing ->
+                            Debug.todo "You tried to send without selecting a buffer."
 
-                    message =
-                        "input 0x" ++ currentBuffer ++ " " ++ model.messageInput ++ "\n"
+                message =
+                    "input 0x" ++ currentBuffer ++ " " ++ model.messageInput ++ "\n"
 
-                    m =
-                        Debug.log "message" message
-                in
-                ( { model | messageInput = "" }
-                , weechatSend message
-                )
-
-            else
-                ( model, Cmd.none )
+                m =
+                    Debug.log "message" message
+            in
+            ( { model | messageInput = "" }
+            , weechatSend message
+            )
 
 
 
@@ -166,14 +164,18 @@ subscriptions =
 
 view : Model -> Html Msg
 view model =
-    div [ class "Container" ]
-        [ Panel.render model.buffers
-        , div
-            [ class "ChatContainer" ]
-            [ Chat.render model.currentBuffer model.lines
-            , MessageInput.render model.messageInput
+    layout [] <|
+        row [ height fill, width fill ]
+            [ Panel.render model.buffers
+            , column
+                [ width <| fillPortion 5
+                , height fill
+                , Background.color theme.chatColor
+                ]
+                [ Chat.render model.currentBuffer model.lines
+                , MessageInput.render model.messageInput
+                ]
             ]
-        ]
 
 
 
