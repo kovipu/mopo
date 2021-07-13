@@ -10,7 +10,8 @@ import Element.HexColor as HexColor
 
 theme =
     { panelColor = hex "#011627"
-    , chatColor = hex "#011627"
+    , background = hex "#011627"
+    , loginColor = hex "#0b253a"
     , messageInputColor = hex "#000f1b"
     , mainTextColor = hex "#d6deeb"
 

@@ -1,4 +1,4 @@
-module Types.Model exposing (Buffer, BuffersModel(..), Line, LinesModel(..), Model, default)
+module Types.Model exposing (Buffer, BuffersModel(..), ConnectionState(..), Line, LinesModel(..), Model, default)
 
 import Dict exposing (Dict)
 
@@ -8,11 +8,25 @@ import Dict exposing (Dict)
 
 
 type alias Model =
-    { buffers : BuffersModel
+    { connectionState : ConnectionState
+    , address : String
+    , password : String
+    , buffers : BuffersModel
     , currentBuffer : Maybe String
     , lines : LinesModel
     , messageInput : String
     }
+
+
+
+-- Connection
+
+
+type ConnectionState
+    = NotConnected
+    | Connecting
+    | Initializing
+    | Connected
 
 
 
@@ -54,7 +68,10 @@ type alias Line =
 
 default : Model
 default =
-    { buffers = BuffersLoading
+    { connectionState = NotConnected
+    , address = ""
+    , password = ""
+    , buffers = BuffersLoading
     , currentBuffer = Nothing
     , lines = LinesLoading
     , messageInput = ""

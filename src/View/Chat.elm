@@ -21,7 +21,6 @@ render currentBuffer linesModel =
     column
         [ height fill
         , width fill
-        , Background.color theme.chatColor
         , Font.color theme.mainTextColor
         , scrollbarY
         ]

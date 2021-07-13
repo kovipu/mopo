@@ -8,7 +8,10 @@ import Types.Bytes exposing (Bytes)
 
 
 type Msg
-    = Recv Bytes
+    = ChangeAddress String
+    | ChangePassword String
+    | Connect
+    | Recv Bytes
     | Status Bool
     | ChangeBuffer String
     | ChangeInput String

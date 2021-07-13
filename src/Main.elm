@@ -10,9 +10,10 @@ import Html exposing (Html)
 import List
 import Theme exposing (theme)
 import Types.Bytes exposing (Bytes)
-import Types.Model as Model exposing (Buffer, BuffersModel(..), Line, LinesModel(..), Model)
+import Types.Model as Model exposing (Buffer, BuffersModel(..), ConnectionState(..), Line, LinesModel(..), Model)
 import Types.Msg exposing (Msg(..))
 import View.Chat as Chat
+import View.Login as Login
 import View.MessageInput as MessageInput
 import View.Panel as Panel
 import WeechatMessage exposing (Message, Object, WeechatData)
@@ -25,15 +26,30 @@ import WeechatMessage exposing (Message, Object, WeechatData)
 update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
     case msg of
+        ChangeAddress addr ->
+            ( { model | address = addr }
+            , Cmd.none
+            )
+
+        ChangePassword pw ->
+            ( { model | password = pw }
+            , Cmd.none
+            )
+
+        Connect ->
+            ( { model | connectionState = Connecting }
+            , connectWebSocket model.address
+            )
+
         Status isConnected ->
-            ( model
+            ( { model | connectionState = Initializing }
             , Cmd.batch
                 -- Init needs to be last for it to be sent first.
                 -- This might cause a race condition.
                 [ weechatSend "sync\n"
                 , weechatSend "(hdata_lines) hdata buffer:gui_buffers(*)/own_lines/first_line(*)/data message,buffer,date,prefix\n"
                 , weechatSend "(hdata_buffers) hdata buffer:gui_buffers(*) number,full_name,short_name\n"
-                , weechatSend "init password=test,compression=off\n"
+                , weechatSend <| "init password=" ++ model.password ++ ",compression=off\n"
                 ]
             )
 
@@ -97,9 +113,13 @@ update msg model =
                                     { model | lines = LinesError err }
 
                         _ ->
+                            let
+                                _ =
+                                    Debug.log <| "Unknown message id: " ++ Maybe.withDefault "<no id>" id
+                            in
                             model
             in
-            ( newModel
+            ( { newModel | connectionState = Connected }
             , Cmd.none
             )
 
@@ -127,9 +147,6 @@ update msg model =
 
                 message =
                     "input 0x" ++ currentBuffer ++ " " ++ model.messageInput ++ "\n"
-
-                m =
-                    Debug.log "message" message
             in
             ( { model | messageInput = "" }
             , weechatSend message
@@ -140,13 +157,16 @@ update msg model =
 -- PORTS
 
 
+port connectWebSocket : String -> Cmd msg
+
+
 port socketStatus : (Bool -> msg) -> Sub msg
 
 
-port weechatReceive : (Bytes -> msg) -> Sub msg
-
-
 port weechatSend : String -> Cmd msg
+
+
+port weechatReceive : (Bytes -> msg) -> Sub msg
 
 
 
@@ -165,17 +185,26 @@ subscriptions =
 view : Model -> Html Msg
 view model =
     layout [] <|
-        row [ height fill, width fill ]
-            [ Panel.render model.buffers
-            , column
-                [ width <| fillPortion 5
-                , height fill
-                , Background.color theme.chatColor
-                ]
-                [ Chat.render model.currentBuffer model.lines
-                , MessageInput.render model.messageInput
-                ]
+        row
+            [ height fill
+            , width fill
+            , Background.color theme.background
             ]
+            (case model.connectionState of
+                Connected ->
+                    [ Panel.render model.buffers
+                    , column
+                        [ width <| fillPortion 5
+                        , height fill
+                        ]
+                        [ Chat.render model.currentBuffer model.lines
+                        , MessageInput.render model.messageInput
+                        ]
+                    ]
+
+                _ ->
+                    [ Login.render model.connectionState model.address model.password ]
+            )
 
 
 

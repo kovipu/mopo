@@ -7,23 +7,26 @@ const app = Elm.Main.init({
   node: document.getElementById('root')
 });
 
-const websocket = new WebSocket('ws://localhost:8000/weechat');
-websocket.binaryType = 'arraybuffer';
+// Connect to a websocket by sending socket address to a port.
+app.ports.connectWebSocket.subscribe(address => {
+  const websocket = new WebSocket(address);
+  websocket.binaryType = 'arraybuffer';
 
-// Receive websocket state to Elm.
-websocket.onopen = () => app.ports.socketStatus.send(true);
-websocket.onerror = () => app.ports.socketStatus.send(false);
+  // Receive messages from Weechat to Elm.
+  websocket.addEventListener("message", event => {
+    // Send message through the port as Int array, as Elm doesn't support ByteArrays through ports.
+    const bytes = new Uint8Array(event.data);
+    app.ports.weechatReceive.send(Array.from(bytes));
+  });
 
-// Receive messages from Weechat to Elm.
-websocket.addEventListener("message", event => {
-  // Send message through the port as Int array, as Elm doesn't support ByteArrays through ports.
-  const bytes = new Uint8Array(event.data);
-  app.ports.weechatReceive.send(Array.from(bytes));
-});
+  // Send messages from Elm to Weechat.
+  app.ports.weechatSend.subscribe(message => {
+    websocket.send(message);
+  });
 
-// Send messages from Elm to Weechat.
-app.ports.weechatSend.subscribe(message => {
-  websocket.send(message);
+  // Receive websocket state to Elm.
+  websocket.onopen = () => app.ports.socketStatus.send(true);
+  websocket.onerror = () => app.ports.socketStatus.send(false);
 });
 
 // If you want your app to work offline and load faster, you can change
