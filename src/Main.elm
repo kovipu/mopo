@@ -1,7 +1,6 @@
 port module Main exposing (..)
 
 import Browser
-import Debug
 import DecodeMessage exposing (BuffersResult(..), LineResult(..), LinesResult(..))
 import Dict exposing (Dict)
 import Element exposing (..)
@@ -113,10 +112,6 @@ update msg model =
                                     { model | lines = LinesError err }
 
                         _ ->
-                            let
-                                _ =
-                                    Debug.log <| "Unknown message id: " ++ Maybe.withDefault "<no id>" id
-                            in
                             model
             in
             ( { newModel | connectionState = Connected }
@@ -136,21 +131,17 @@ update msg model =
 
         -- Send message on enter pressed.
         SendMessage ->
-            let
-                currentBuffer =
-                    case model.currentBuffer of
-                        Just buffer ->
-                            buffer
-
-                        Nothing ->
-                            Debug.todo "You tried to send without selecting a buffer."
-
-                message =
-                    "input 0x" ++ currentBuffer ++ " " ++ model.messageInput ++ "\n"
-            in
-            ( { model | messageInput = "" }
-            , weechatSend message
-            )
+            case model.currentBuffer of
+                Just buffer ->
+                    let
+                        message =
+                            "input 0x" ++ buffer ++ " " ++ model.messageInput ++ "\n"
+                    in
+                    ( { model | messageInput = "" }
+                    , weechatSend message
+                    )
+                Nothing ->
+                    ( model, Cmd.none )
 
 
 

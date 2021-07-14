@@ -109,4 +109,4 @@ hex colorStr =
             color
 
         Nothing ->
-            Debug.todo ("Invalid hex color: " ++ colorStr)
+            rgb255 255 0 0

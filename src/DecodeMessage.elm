@@ -26,15 +26,18 @@ parseHdataBuffers data =
                     List.map parseBuffer buffers
             in
             if allValidBuffers parsedBuffers then
-                List.map
-                    (\b ->
+                List.foldl
+                    (\b acc ->
                         case b of
                             BufferOk buffer ->
-                                buffer
+                                buffer :: acc
 
-                            _ ->
-                                Debug.todo "This should never happen."
+                            -- If there's a failure, we return BuffersErr already.
+                            -- So this state is never reached.
+                            BufferFailure _ ->
+                                acc
                     )
+                    []
                     parsedBuffers
                     |> Buffers
 
@@ -79,19 +82,15 @@ parseBuffer data =
         numberResult =
             getIntOrFail "number" data
     in
-    -- This is ugly.
-    -- Elm's pattern matching *should* have a nicer way to get the pure values out of this.
-    -- I was limited by allowing only three values per pattern matched tuple.
-    if isJust ppathResult && isJust fullNameResult && isJust shortNameResult && isJust numberResult then
-        BufferOk
-            { ppath = getJust ppathResult
-            , fullName = getJust fullNameResult
-            , shortName = getJust shortNameResult
-            , number = getJust numberResult
-            }
-
-    else
-        BufferFailure "Invalid buffer."
+    Maybe.map4
+        (\ppath fullName shortName number ->
+            BufferOk { ppath = ppath, fullName = fullName, shortName = shortName, number = number }
+        )
+        ppathResult
+        fullNameResult
+        shortNameResult
+        numberResult
+        |> Maybe.withDefault (BufferFailure "Invalid buffer.")
 
 
 type LinesResult
@@ -112,15 +111,17 @@ parseHdataLines data =
                     List.map parseLine lines
             in
             if allValidLines parsedLines then
-                List.map
-                    (\m ->
+                List.foldl
+                    (\m acc ->
                         case m of
                             LineOk line ->
-                                line
+                                line :: acc
 
-                            _ ->
-                                Debug.todo "This should never happen."
+                            -- This state is never reached, as we check all lines are valid.
+                            LineFailure _ ->
+                                acc
                     )
+                    []
                     parsedLines
                     |> groupLinesByBuffer
                     |> Lines
@@ -187,17 +188,16 @@ parseLine data =
         messageResult =
             getStrOrFail "message" data
     in
-    if isJust ppathResult && isJust bufferResult && isJust dateResult && isJust prefixResult && isJust messageResult then
-        LineOk
-            { ppath = getJust ppathResult
-            , buffer = getJust bufferResult
-            , date = getJust dateResult
-            , prefix = getJust prefixResult
-            , message = getJust messageResult
-            }
-
-    else
-        LineFailure "Invalid message."
+    Maybe.map5
+        (\ppath buffer date prefix message ->
+            LineOk { ppath = ppath, buffer = buffer, date = date, prefix = prefix, message = message }
+        )
+        ppathResult
+        bufferResult
+        dateResult
+        prefixResult
+        messageResult
+        |> Maybe.withDefault (LineFailure "Invalid message.")
 
 
 
@@ -217,31 +217,6 @@ parseBufferLineAdded data =
 
         _ ->
             LineFailure "Datatype is not Hda."
-
-
-
--- Maybe helpers.
-
-
-isJust : Maybe v -> Bool
-isJust maybe =
-    case maybe of
-        Just _ ->
-            True
-
-        Nothing ->
-            False
-
-
-getJust : Maybe v -> v
-getJust maybe =
-    case maybe of
-        Just value ->
-            value
-
-        Nothing ->
-            Debug.todo "You f*cked up."
-
 
 
 -- Object helpers.
