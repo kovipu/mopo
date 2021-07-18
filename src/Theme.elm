@@ -14,6 +14,7 @@ theme =
     , loginColor = hex "#0b253a"
     , messageInputColor = hex "#000f1b"
     , mainTextColor = hex "#d6deeb"
+    , timestampColor = hex "#575656"
 
     -- chat colors.
     , color00 = hex "#d6deeb"

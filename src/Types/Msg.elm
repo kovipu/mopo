@@ -1,5 +1,6 @@
 module Types.Msg exposing (Msg(..))
 
+import Time
 import Types.Bytes exposing (Bytes)
 
 
@@ -16,3 +17,4 @@ type Msg
     | ChangeBuffer String
     | ChangeInput String
     | SendMessage
+    | TimeZone Time.Zone

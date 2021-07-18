@@ -7,7 +7,9 @@ import Element exposing (..)
 import Element.Background as Background
 import Html exposing (Html)
 import List
+import Task
 import Theme exposing (theme)
+import Time
 import Types.Bytes exposing (Bytes)
 import Types.Model as Model exposing (Buffer, BuffersModel(..), ConnectionState(..), Line, LinesModel(..), Model)
 import Types.Msg exposing (Msg(..))
@@ -50,6 +52,11 @@ update msg model =
                 , weechatSend "(hdata_buffers) hdata buffer:gui_buffers(*) number,full_name,short_name\n"
                 , weechatSend <| "init password=" ++ model.password ++ ",compression=off\n"
                 ]
+            )
+
+        TimeZone zone ->
+            ( { model | timeZone = zone }
+            , Cmd.none
             )
 
         Recv message ->
@@ -96,7 +103,7 @@ update msg model =
                                                         (\oldBuffer ->
                                                             case oldBuffer of
                                                                 Just oldLines ->
-                                                                    Just (oldLines ++ [ line ])
+                                                                    Just (line :: oldLines)
 
                                                                 Nothing ->
                                                                     Just [ line ]
@@ -140,6 +147,7 @@ update msg model =
                     ( { model | messageInput = "" }
                     , weechatSend message
                     )
+
                 Nothing ->
                     ( model, Cmd.none )
 
@@ -188,7 +196,7 @@ view model =
                         [ width <| fillPortion 5
                         , height fill
                         ]
-                        [ Chat.render model.currentBuffer model.lines
+                        [ Chat.render model
                         , MessageInput.render model.messageInput
                         ]
                     ]
@@ -206,7 +214,12 @@ main : Program () Model Msg
 main =
     Browser.element
         { view = view
-        , init = \_ -> ( Model.default, Cmd.none )
+        , init = \_ -> ( Model.default, getTimeZone )
         , update = update
         , subscriptions = \_ -> subscriptions
         }
+
+
+getTimeZone : Cmd Msg
+getTimeZone =
+    Task.perform TimeZone Time.here

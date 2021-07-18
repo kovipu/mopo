@@ -1,6 +1,7 @@
 module Types.Model exposing (Buffer, BuffersModel(..), ConnectionState(..), Line, LinesModel(..), Model, default)
 
 import Dict exposing (Dict)
+import Time
 
 
 
@@ -11,6 +12,7 @@ type alias Model =
     { connectionState : ConnectionState
     , address : String
     , password : String
+    , timeZone : Time.Zone
     , buffers : BuffersModel
     , currentBuffer : Maybe String
     , lines : LinesModel
@@ -71,6 +73,7 @@ default =
     { connectionState = NotConnected
     , address = ""
     , password = ""
+    , timeZone = Time.utc
     , buffers = BuffersLoading
     , currentBuffer = Nothing
     , lines = LinesLoading

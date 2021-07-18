@@ -111,7 +111,7 @@ parseHdataLines data =
                     List.map parseLine lines
             in
             if allValidLines parsedLines then
-                List.foldl
+                List.foldr
                     (\m acc ->
                         case m of
                             LineOk line ->
@@ -135,7 +135,7 @@ parseHdataLines data =
 
 groupLinesByBuffer : List Line -> Dict String (List Line)
 groupLinesByBuffer lines =
-    List.foldr
+    List.foldl
         (\m acc ->
             let
                 oldBuffer =
@@ -217,6 +217,7 @@ parseBufferLineAdded data =
 
         _ ->
             LineFailure "Datatype is not Hda."
+
 
 
 -- Object helpers.

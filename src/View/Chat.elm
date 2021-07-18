@@ -8,7 +8,8 @@ import Element.Border as Border
 import Element.Font as Font
 import Regex exposing (Regex)
 import Theme exposing (theme)
-import Types.Model exposing (Line, LinesModel(..))
+import Time
+import Types.Model exposing (Line, LinesModel(..), Model)
 import Types.Msg exposing (Msg)
 
 
@@ -16,15 +17,16 @@ import Types.Msg exposing (Msg)
 ---- CHAT ----
 
 
-render : Maybe String -> LinesModel -> Element Msg
-render currentBuffer linesModel =
+render : Model -> Element Msg
+render model =
     column
         [ height fill
         , width fill
         , Font.color theme.mainTextColor
         , scrollbarY
+        , paddingXY 5 0
         ]
-        (case linesModel of
+        (case model.lines of
             LinesLoading ->
                 [ text "loading lines..." ]
 
@@ -32,11 +34,12 @@ render currentBuffer linesModel =
                 [ text err ]
 
             LinesLoaded linesByBuffer ->
-                case currentBuffer of
+                case model.currentBuffer of
                     Just buffer ->
                         Dict.get buffer linesByBuffer
                             |> Maybe.andThen (\m -> Just (List.take 100 m))
-                            |> Maybe.andThen renderLines
+                            |> Maybe.andThen (\m -> Just (List.reverse m))
+                            |> Maybe.andThen (\m -> renderLines model.timeZone m)
                             |> Maybe.withDefault [ text "Invalid buffer selected." ]
 
                     Nothing ->
@@ -44,10 +47,10 @@ render currentBuffer linesModel =
         )
 
 
-renderLines : List Line -> Maybe (List (Element Msg))
-renderLines lines =
+renderLines : Time.Zone -> List Line -> Maybe (List (Element Msg))
+renderLines timeZone lines =
     List.foldr reducer [] lines
-        |> List.map renderLineGroup
+        |> List.map (\group -> renderLineGroup timeZone group)
         |> Just
 
 
@@ -89,8 +92,8 @@ reducer line acc =
             ]
 
 
-renderLineGroup : LineGroup -> Element Msg
-renderLineGroup lineGroup =
+renderLineGroup : Time.Zone -> LineGroup -> Element Msg
+renderLineGroup timeZone lineGroup =
     let
         nick =
             lineGroup.prefix
@@ -109,13 +112,30 @@ renderLineGroup lineGroup =
 
             else
                 "F00"
+
+        timestamp =
+            lineGroup.date
+                |> String.toInt
+                |> Maybe.andThen (\m -> Just (Time.millisToPosix (m * 1000)))
+                |> Maybe.andThen
+                    (\t ->
+                        Just
+                            (String.fromInt (Time.toHour timeZone t)
+                                ++ ":"
+                                ++ String.fromInt (Time.toMinute timeZone t)
+                            )
+                    )
+                |> Maybe.withDefault ""
     in
     column
         [ paddingXY 5 2
+        , width fill
         ]
         [ row
-            [ paddingXY 0 2 ]
-            (lineGroup.prefix |> Maybe.withDefault "Server" |> formatColoredText)
+            [ paddingXY 0 2, width fill ]
+            [ row [] (lineGroup.prefix |> Maybe.withDefault "Server" |> formatColoredText)
+            , el [ alignRight, Font.color theme.timestampColor ] (text timestamp)
+            ]
         , column
             [ padding 5
             , Border.widthEach { left = 2, bottom = 0, top = 0, right = 0 }
@@ -125,7 +145,7 @@ renderLineGroup lineGroup =
             (lineGroup.messages
                 |> List.map
                     (\m ->
-                        paragraph [] (formatColoredText m)
+                        paragraph [ padding 2 ] (formatColoredText m)
                     )
             )
         ]
