@@ -21,7 +21,7 @@ jobs:
         run: npm install -g create-elm-app
 
       - name: Build
-        run: elm-app build
+        run: npm run build
 
       - name: Deploy to S3
         uses: jakejarvis/s3-sync-action@master
