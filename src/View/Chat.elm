@@ -122,7 +122,7 @@ renderLineGroup timeZone lineGroup =
                         Just
                             (String.fromInt (Time.toHour timeZone t)
                                 ++ ":"
-                                ++ String.fromInt (Time.toMinute timeZone t)
+                                ++ String.pad 2 '0' (String.fromInt (Time.toMinute timeZone t))
                             )
                     )
                 |> Maybe.withDefault ""
