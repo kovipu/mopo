@@ -9,13 +9,13 @@ import List
 import Task
 import Time
 import Types.Bytes exposing (Bytes)
-import Types.Model as Model exposing (Buffer, BuffersModel(..), ConnectionState(..), Line, LinesModel(..), Model)
+import Types.Model as Model exposing (BuffersModel(..), ConnectionState(..), LinesModel(..), Model)
 import Types.Msg exposing (Msg(..))
 import View.Chat as Chat
 import View.Login as Login
 import View.MessageInput as MessageInput
 import View.Panel as Panel
-import WeechatMessage exposing (Message, Object, WeechatData)
+import WeechatMessage
 
 
 

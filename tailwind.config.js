@@ -1,7 +1,39 @@
 module.exports = {
   purge: {
-    content: [
-      './src/**/*.elm'
+    content: ['./src/**/*.elm'],
+    safelist: [
+      "text-highlight-00",
+      "text-highlight-01",
+      "text-highlight-02",
+      "text-highlight-03",
+      "text-highlight-04",
+      "text-highlight-05",
+      "text-highlight-06",
+      "text-highlight-07",
+      "text-highlight-08",
+      "text-highlight-09",
+      "text-highlight-10",
+      "text-highlight-11",
+      "text-highlight-12",
+      "text-highlight-13",
+      "text-highlight-14",
+      "text-highlight-15",
+      "text-highlight-F00",
+      "text-highlight-F01",
+      "text-highlight-F02",
+      "text-highlight-F03",
+      "text-highlight-F04",
+      "text-highlight-F05",
+      "text-highlight-F06",
+      "text-highlight-F07",
+      "text-highlight-F08",
+      "text-highlight-F09",
+      "text-highlight-F10",
+      "text-highlight-F11",
+      "text-highlight-F12",
+      "text-highlight-F13",
+      "text-highlight-F14",
+      "text-highlight-F15"
     ]
   },
   darkMode: false, // or 'media' or 'class'

@@ -177,7 +177,7 @@ formatColoredText line =
                         colorEscape ++ String.join colorEscape tail
             in
             if colorCodeLength == 0 then
-                [ text before ] ++ formatColoredText content ++ formatColoredText tailJoined
+                text before :: formatColoredText content ++ formatColoredText tailJoined
 
             else
                 [ text before
