@@ -1,11 +1,8 @@
 module View.Login exposing (render)
 
-import Element exposing (..)
-import Element.Background as Background
-import Element.Border as Border
-import Element.Font as Font
-import Element.Input as Input exposing (text)
-import Theme exposing (theme)
+import Html exposing (Html, button, div, h1, input, text)
+import Html.Attributes exposing (class, type_, value)
+import Html.Events exposing (onClick, onInput)
 import Types.Model exposing (ConnectionState(..))
 import Types.Msg exposing (Msg(..))
 
@@ -14,70 +11,30 @@ import Types.Msg exposing (Msg(..))
 ---- LOGIN ----
 
 
-render : ConnectionState -> String -> String -> Element Msg
+render : ConnectionState -> String -> String -> List (Html Msg)
 render connectionState address password =
-    column
-        [ centerX
-        , centerY
-        , Background.color theme.loginColor
-        , Font.color theme.mainTextColor
-        , padding 60
-        , spacing 20
-        ]
-        [ el
-            [ Font.size 30 ]
-            (Element.text "🛵 Mopo")
-        , Input.text
-            inputStyle
-            { onChange = ChangeAddress
-            , text = address
-            , placeholder = Nothing
-            , label = renderLabel "Address"
-            }
-        , Input.currentPassword
-            inputStyle
-            { onChange = ChangePassword
-            , text = password
-            , placeholder = Nothing
-            , show = False
-            , label = renderLabel "Password"
-            }
+    [ div
+        [ class "mx-auto flex flex-col justify-center items-center text-xl pt-12" ]
+        [ h1
+            [ class "m-2 text-3xl" ]
+            [ text "🛵 Mopo" ]
+        , input [ class "w-72 lg:w-96 m-2 p-2 bg-input text-lg", value address, onInput ChangeAddress ] []
+        , input [ type_ "password", class "w-72 lg:w-96 m-2 p-2 bg-input text-lg", value password, onInput ChangePassword ] []
         , renderConnectionState connectionState
         ]
-
-
-inputStyle =
-    [ Background.color theme.background
-    , Border.width 0
-    , Border.rounded 0
-    , width <| px 320
-    , Font.size 16
     ]
-
-
-renderLabel label =
-    Input.labelAbove
-        [ Font.size 18, paddingXY 0 5 ]
-        (Element.text label)
 
 
 renderConnectionState connectionState =
     case connectionState of
         NotConnected ->
-            Input.button
-                [ Border.color theme.mainTextColor
-                , Border.width 2
-                , paddingXY 25 10
-                ]
-                { onPress = Just Connect
-                , label = Element.text "Connect"
-                }
+            button [ onClick Connect, class "border-2 border-foreground px-4 py-2 m-2" ] [ text "Connect" ]
 
         Connecting ->
-            Element.text "Connecting..."
+            text "Connecting..."
 
         Initializing ->
-            Element.text "Initializing..."
+            text "Initializing..."
 
         Connected ->
-            Element.text "Connected"
+            text "Connected"

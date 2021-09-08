@@ -1,11 +1,8 @@
 module View.Panel exposing (render)
 
-import Element exposing (..)
-import Element.Background as Background
-import Element.Font as Font
-import Element.Input as Input
+import Html exposing (Html, button, div, text)
+import Html.Attributes exposing (class)
 import Html.Events exposing (onClick)
-import Theme exposing (theme)
 import Types.Model exposing (Buffer, BuffersModel(..))
 import Types.Msg exposing (Msg(..))
 
@@ -14,15 +11,10 @@ import Types.Msg exposing (Msg(..))
 ---- PANEL ----
 
 
-render : BuffersModel -> Element Msg
+render : BuffersModel -> Html Msg
 render bufferModel =
-    column
-        [ height fill
-        , width <| fillPortion 1
-        , paddingXY 0 10
-        , Font.color theme.mainTextColor
-        , Background.color theme.panelColor
-        ]
+    div
+        [ class "h-full w-56 flex flex-col items-start justify-center text-lg" ]
         (case bufferModel of
             BuffersLoading ->
                 [ text "Loading buffers..." ]
@@ -35,7 +27,7 @@ render bufferModel =
         )
 
 
-renderBuffer : Buffer -> Element Msg
+renderBuffer : Buffer -> Html Msg
 renderBuffer buffer =
     let
         pointer =
@@ -46,9 +38,6 @@ renderBuffer buffer =
             buffer.shortName
                 |> Maybe.withDefault buffer.fullName
     in
-    Input.button
-        [ paddingXY 15 5
-        ]
-        { onPress = Just (ChangeBuffer pointer)
-        , label = text name
-        }
+    button
+        [ class "w-full px-8 py-1 hover:bg-input text-left", onClick (ChangeBuffer pointer) ]
+        [ text name ]

@@ -3,12 +3,10 @@ port module Main exposing (..)
 import Browser
 import DecodeMessage exposing (BuffersResult(..), LineResult(..), LinesResult(..))
 import Dict exposing (Dict)
-import Element exposing (..)
-import Element.Background as Background
-import Html exposing (Html)
+import Html exposing (Html, div)
+import Html.Attributes exposing (class)
 import List
 import Task
-import Theme exposing (theme)
 import Time
 import Types.Bytes exposing (Bytes)
 import Types.Model as Model exposing (Buffer, BuffersModel(..), ConnectionState(..), Line, LinesModel(..), Model)
@@ -183,27 +181,21 @@ subscriptions =
 
 view : Model -> Html Msg
 view model =
-    layout [] <|
-        row
-            [ height fill
-            , width fill
-            , Background.color theme.background
-            ]
-            (case model.connectionState of
-                Connected ->
-                    [ Panel.render model.buffers
-                    , column
-                        [ width <| fillPortion 5
-                        , height fill
-                        ]
-                        [ Chat.render model
-                        , MessageInput.render model.messageInput
-                        ]
+    div
+        [ class "h-screen w-screen flex flex-row bg-background text-foreground" ]
+        (case model.connectionState of
+            Connected ->
+                [ Panel.render model.buffers
+                , div
+                    [ class "w-full flex flex-col justify-between" ]
+                    [ Chat.render model
+                    , MessageInput.render model.messageInput
                     ]
+                ]
 
-                _ ->
-                    [ Login.render model.connectionState model.address model.password ]
-            )
+            _ ->
+                Login.render model.connectionState model.address model.password
+        )
 
 
 

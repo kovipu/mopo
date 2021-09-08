@@ -2,12 +2,9 @@ module View.Chat exposing (render)
 
 import Constants exposing (closeEscape, colorEscape)
 import Dict exposing (Dict)
-import Element exposing (..)
-import Element.Background as Background
-import Element.Border as Border
-import Element.Font as Font
+import Html exposing (Html, div, em, p, text)
+import Html.Attributes exposing (class)
 import Regex exposing (Regex)
-import Theme exposing (theme)
 import Time
 import Types.Model exposing (Line, LinesModel(..), Model)
 import Types.Msg exposing (Msg)
@@ -17,15 +14,10 @@ import Types.Msg exposing (Msg)
 ---- CHAT ----
 
 
-render : Model -> Element Msg
+render : Model -> Html Msg
 render model =
-    column
-        [ height fill
-        , width fill
-        , Font.color theme.mainTextColor
-        , scrollbarY
-        , paddingXY 5 0
-        ]
+    div
+        [ class "w-full flex flex-col-reverse overflow-auto" ]
         (case model.lines of
             LinesLoading ->
                 [ text "loading lines..." ]
@@ -38,7 +30,6 @@ render model =
                     Just buffer ->
                         Dict.get buffer linesByBuffer
                             |> Maybe.andThen (\m -> Just (List.take 100 m))
-                            |> Maybe.andThen (\m -> Just (List.reverse m))
                             |> Maybe.andThen (\m -> renderLines model.timeZone m)
                             |> Maybe.withDefault [ text "Invalid buffer selected." ]
 
@@ -47,7 +38,7 @@ render model =
         )
 
 
-renderLines : Time.Zone -> List Line -> Maybe (List (Element Msg))
+renderLines : Time.Zone -> List Line -> Maybe (List (Html Msg))
 renderLines timeZone lines =
     List.foldr reducer [] lines
         |> List.map (\group -> renderLineGroup timeZone group)
@@ -73,7 +64,7 @@ reducer line acc =
             if line.prefix == prevPrefix then
                 { prefix = line.prefix
                 , date = line.date
-                , messages = line.message :: head.messages
+                , messages = head.messages ++ [ line.message ]
                 }
                     :: tail
 
@@ -92,7 +83,7 @@ reducer line acc =
             ]
 
 
-renderLineGroup : Time.Zone -> LineGroup -> Element Msg
+renderLineGroup : Time.Zone -> LineGroup -> Html Msg
 renderLineGroup timeZone lineGroup =
     let
         nick =
@@ -127,31 +118,25 @@ renderLineGroup timeZone lineGroup =
                     )
                 |> Maybe.withDefault ""
     in
-    column
-        [ paddingXY 5 2
-        , width fill
-        ]
-        [ row
-            [ paddingXY 0 2, width fill ]
-            [ row [] (lineGroup.prefix |> Maybe.withDefault "Server" |> formatColoredText)
-            , el [ alignRight, Font.color theme.timestampColor ] (text timestamp)
+    div
+        [ class "w-full px-5 py-2" ]
+        [ div
+            [ class "inline-flex justify-between w-full py-2" ]
+            [ p [] (lineGroup.prefix |> Maybe.withDefault "Server" |> formatColoredText)
+            , em [] [ text timestamp ]
             ]
-        , column
-            [ padding 5
-            , Border.widthEach { left = 2, bottom = 0, top = 0, right = 0 }
-            , Border.roundEach { topLeft = 2, bottomLeft = 2, topRight = 0, bottomRight = 0 }
-            , Border.color (Theme.colorCode nickColor)
-            ]
+        , div
+            []
             (lineGroup.messages
                 |> List.map
                     (\m ->
-                        paragraph [ padding 2 ] (formatColoredText m)
+                        p [] (formatColoredText m)
                     )
             )
         ]
 
 
-formatColoredText : String -> List (Element Msg)
+formatColoredText : String -> List (Html Msg)
 formatColoredText line =
     let
         re =
@@ -184,9 +169,6 @@ formatColoredText line =
                 content =
                     String.dropLeft colorCodeLength inner
 
-                className =
-                    "highlight-" ++ colorCode
-
                 tailJoined =
                     if tail == [] then
                         ""
@@ -199,8 +181,8 @@ formatColoredText line =
 
             else
                 [ text before
-                , paragraph
-                    [ Font.color (Theme.colorCode colorCode) ]
+                , em
+                    [ class ("text-highlight-" ++ colorCode) ]
                     (formatColoredText content)
                 ]
                     ++ formatColoredText tailJoined

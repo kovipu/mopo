@@ -8,6 +8,7 @@
   },
   "scripts": {
     "start": "npx elm-app start",
+    "watch-tailwind": "npx tailwind -o src/main.css --watch",
     "build-tailwind": "npx tailwind -o src/main.css",
     "build-elm": "npx elm-app build",
     "build": "NODE_ENV=production npm run build-tailwind && npm run build-elm",
