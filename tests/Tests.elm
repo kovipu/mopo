@@ -2,7 +2,7 @@ module Tests exposing (..)
 
 import Expect
 import Test exposing (..)
-import WeechatMessage exposing (Message(..))
+import WeechatMessage exposing (Message)
 
 
 all : Test

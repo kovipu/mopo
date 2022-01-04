@@ -1,7 +1,7 @@
 module View.MessageInput exposing (render)
 
 import Html exposing (Attribute, Html, input)
-import Html.Attributes exposing (class, value, placeholder)
+import Html.Attributes exposing (class, placeholder, value)
 import Html.Events exposing (keyCode, on, onInput)
 import Json.Decode as Decode
 import Types.Msg exposing (Msg(..))

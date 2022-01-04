@@ -14,7 +14,6 @@
     "build": "NODE_ENV=production npm run build-tailwind && npm run build-elm",
     "test": "npx elm-app test",
     "format": "npx elm-format src/ --yes"
-
   },
   "repository": {
     "type": "git",
@@ -36,6 +35,6 @@
   "devDependencies": {
     "create-elm-app": "^5.22.0",
     "elm-format": "^0.8.5",
-    "tailwindcss": "^2.2.9"
+    "tailwindcss": "^3.0.10"
   }
 }
