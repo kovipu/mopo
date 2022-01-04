@@ -71,8 +71,8 @@ type alias Line =
 default : Model
 default =
     { connectionState = NotConnected
-    , address = ""
-    , password = ""
+    , address = "wss://irc-server.purtsi.io/weechat"
+    , password = "u55W8>A.rqA%Xz!P~"
     , timeZone = Time.utc
     , buffers = BuffersLoading
     , currentBuffer = Nothing

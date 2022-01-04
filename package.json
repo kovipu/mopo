@@ -12,7 +12,9 @@
     "build-tailwind": "npx tailwind -o src/main.css",
     "build-elm": "npx elm-app build",
     "build": "NODE_ENV=production npm run build-tailwind && npm run build-elm",
-    "test": "npx elm-app test"
+    "test": "npx elm-app test",
+    "format": "npx elm-format src/ --yes"
+
   },
   "repository": {
     "type": "git",
@@ -33,6 +35,7 @@
   "homepage": "https://github.com/kovipu/mopo#readme",
   "devDependencies": {
     "create-elm-app": "^5.22.0",
+    "elm-format": "^0.8.5",
     "tailwindcss": "^2.2.9"
   }
 }

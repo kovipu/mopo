@@ -21,53 +21,14 @@ parseHdataBuffers : WeechatData -> BuffersResult
 parseHdataBuffers data =
     case data of
         Hda buffers ->
-            let
-                parsedBuffers =
-                    List.map parseBuffer buffers
-            in
-            if allValidBuffers parsedBuffers then
-                List.foldl
-                    (\b acc ->
-                        case b of
-                            BufferOk buffer ->
-                                buffer :: acc
-
-                            -- If there's a failure, we return BuffersErr already.
-                            -- So this state is never reached.
-                            BufferFailure _ ->
-                                acc
-                    )
-                    []
-                    parsedBuffers
-                    |> Buffers
-
-            else
-                BuffersErr "An invalid buffer found."
+            List.filterMap parseBuffer buffers
+                |> Buffers
 
         _ ->
             BuffersErr "Datatype is not Hda."
 
 
-allValidBuffers : List BufferResult -> Bool
-allValidBuffers buffers =
-    List.all
-        (\b ->
-            case b of
-                BufferOk _ ->
-                    True
-
-                BufferFailure _ ->
-                    False
-        )
-        buffers
-
-
-type BufferResult
-    = BufferOk Buffer
-    | BufferFailure String
-
-
-parseBuffer : Object -> BufferResult
+parseBuffer : Object -> Maybe Buffer
 parseBuffer data =
     let
         ppathResult =
@@ -84,13 +45,13 @@ parseBuffer data =
     in
     Maybe.map4
         (\ppath fullName shortName number ->
-            BufferOk { ppath = ppath, fullName = fullName, shortName = shortName, number = number }
+            Just { ppath = ppath, fullName = fullName, shortName = shortName, number = number }
         )
         ppathResult
         fullNameResult
         shortNameResult
         numberResult
-        |> Maybe.withDefault (BufferFailure "Invalid buffer.")
+        |> Maybe.withDefault Nothing
 
 
 type LinesResult
@@ -159,7 +120,7 @@ allValidLines lines =
                 LineOk _ ->
                     True
 
-                LineFailure fail ->
+                LineFailure _ ->
                     False
         )
         lines

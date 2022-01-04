@@ -1,7 +1,7 @@
 module View.MessageInput exposing (render)
 
 import Html exposing (Attribute, Html, input)
-import Html.Attributes exposing (class, value)
+import Html.Attributes exposing (class, value, placeholder)
 import Html.Events exposing (keyCode, on, onInput)
 import Json.Decode as Decode
 import Types.Msg exposing (Msg(..))
@@ -13,7 +13,7 @@ import Types.Msg exposing (Msg(..))
 
 render : String -> Html Msg
 render messageInput =
-    input [ class "w-full bg-input p-2", value messageInput, onInput ChangeInput, onEnter SendMessage ] []
+    input [ class "w-full bg-input py-2.5 px-5", placeholder "Write a message", value messageInput, onInput ChangeInput, onEnter SendMessage ] []
 
 
 onEnter : Msg -> Attribute Msg

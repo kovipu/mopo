@@ -5,8 +5,8 @@ import String.UTF8 as UTF8
 
 
 
--- This file includes low level functions for parsing WeeChat Relay messages from bytes to
--- generic Elm dicts. This file could be considered a generic library for WeeChat Relay.
+-- This file includes low level functions for parsing WeeChat Relay messages from bytes to Elm dicts.
+-- This file could be considered a generic library for WeeChat Relay.
 
 
 type alias Message =
