@@ -121,9 +121,9 @@ renderLineGroup timeZone lineGroup =
     div
         [ class "w-full px-5 py-2" ]
         [ div
-            [ class "inline-flex justify-between w-full py-2" ]
+            [ class "inline-flex w-full py-2" ]
             [ p [] (lineGroup.prefix |> Maybe.withDefault "Server" |> formatColoredText)
-            , em [] [ text timestamp ]
+            , em [ class "ml-2 mt-0.2 text-sm text-timestamp" ] [ text timestamp ]
             ]
         , div
             []

@@ -41,6 +41,7 @@ module.exports = {
     colors: {
       background: "#1a1c24",
       foreground: "#d5d8da",
+      timestamp: "#555",
       input: "#6c6f9380",
       highlight: {
         "00": "#d6deeb",
@@ -77,7 +78,11 @@ module.exports = {
         "F15": "#22da6e"
       }
     },
-    extend: {},
+    extend: {
+      spacing: {
+        "0.2": "0.2rem",
+      }
+    },
   },
   variants: {
     extend: {},
