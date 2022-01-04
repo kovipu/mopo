@@ -7,6 +7,18 @@ const app = Elm.Main.init({
   node: document.getElementById('root')
 });
 
+// Send to sessionStorage.
+app.ports.storeSession.subscribe(data => {
+  console.log('Storing session data:', data);
+  sessionStorage.setItem('session', data);
+});
+
+// Load from sesionStorage.
+app.ports.loadSession.subscribe(() => {
+  console.log('Loading session data:', sessionStorage.getItem('session'));
+  app.ports.receiveSession.send(sessionStorage.getItem('session'));
+});
+
 // Connect to a websocket by sending socket address to a port.
 app.ports.connectWebSocket.subscribe(address => {
   const websocket = new WebSocket(address);

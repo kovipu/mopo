@@ -49,6 +49,7 @@ update msg model =
                 , weechatSend "(hdata_lines) hdata buffer:gui_buffers(*)/own_lines/first_line(*)/data message,buffer,date,prefix\n"
                 , weechatSend "(hdata_buffers) hdata buffer:gui_buffers(*) number,full_name,short_name\n"
                 , weechatSend <| "init password=" ++ model.password ++ ",compression=off\n"
+                , storeSession <| ( "session", model.address ++ " " ++ model.password )
                 ]
             )
 
@@ -158,6 +159,15 @@ port connectWebSocket : String -> Cmd msg
 
 
 port socketStatus : (Bool -> msg) -> Sub msg
+
+
+port storeSession : (String, String) -> Cmd msg
+
+
+port loadSession : String -> Cmd msg
+
+
+port receiveSession : (String -> msg) -> Sub msg
 
 
 port weechatSend : String -> Cmd msg
