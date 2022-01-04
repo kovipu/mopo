@@ -33,7 +33,8 @@ update msg model =
                 Just s ->
                     case String.split " " s of
                         [ address, password ] ->
-                            ( { model | address = address, password = password }, Cmd.none )
+                            ( { model | address = address, password = password, connectionState = Initializing }
+                            , connectWebSocket address )
 
                         _ ->
                             ( model, Cmd.none )
