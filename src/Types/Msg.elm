@@ -14,6 +14,7 @@ type Msg
     | Connect
     | Recv Bytes
     | Status Bool
+    | ReceiveSession (Maybe String)
     | ChangeBuffer String
     | ChangeInput String
     | SendMessage
