@@ -2,8 +2,8 @@ module View.Chat exposing (render)
 
 import Constants exposing (closeEscape, colorEscape)
 import Dict exposing (Dict)
-import Html exposing (Html, div, em, p, text)
-import Html.Attributes exposing (class)
+import Html exposing (Html, div, em, p, text, a)
+import Html.Attributes exposing (class, href, target)
 import Regex exposing (Regex)
 import Time
 import Types.Model exposing (Line, LinesModel(..), Model)
@@ -86,24 +86,6 @@ reducer line acc =
 renderLineGroup : Time.Zone -> LineGroup -> Html Msg
 renderLineGroup timeZone lineGroup =
     let
-        nick =
-            lineGroup.prefix
-                |> Maybe.withDefault "Server"
-
-        escapeChar =
-            String.slice 4 5 nick
-
-        nickColor =
-            if escapeChar == colorEscape then
-                if String.slice 5 6 nick == "F" then
-                    String.slice 5 8 nick
-
-                else
-                    String.slice 5 7 nick
-
-            else
-                "F00"
-
         timestamp =
             lineGroup.date
                 |> String.toInt
@@ -188,11 +170,26 @@ formatColoredText line =
                     ++ formatColoredText tailJoined
 
         [ msg ] ->
-            [ text msg ]
+            formatLinks msg
 
         [] ->
             []
 
+formatLinks : String -> List (Html Msg)
+formatLinks line =
+    String.split " " line
+        |> List.map
+            (\word ->
+                if String.startsWith "http://" word || String.startsWith "https://" word then
+                    a
+                        [ href word, target "_blank", class "text-link hover:underline" ]
+                        [ text word ]
+
+                else
+                    word
+                        |> text
+            )
+        |> List.intersperse (text " ")
 
 isInt : String -> Bool
 isInt s =

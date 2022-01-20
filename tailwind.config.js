@@ -42,6 +42,7 @@ module.exports = {
       background: "#1a1c24",
       foreground: "#d5d8da",
       timestamp: "#555",
+      link: "#7693ff",
       input: "#6c6f9380",
       highlight: {
         "00": "#d6deeb",
