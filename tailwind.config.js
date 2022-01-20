@@ -79,6 +79,9 @@ module.exports = {
         "F15": "#22da6e"
       }
     },
+    fontFamily: {
+      'sans': ['Lato', 'sans-serif']
+    },
     extend: {
       spacing: {
         "0.2": "0.2rem",
